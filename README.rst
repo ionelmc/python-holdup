@@ -71,13 +71,12 @@ Installation
 Documentation
 =============
 
-usage: holdup [-h] [-f] [-t SECONDS] [-n] [service [service ...]] [-- command [arg [arg ...]]]
+Usage: ``holdup [-h] [-f] [-t SECONDS] [-n] [service [service ...]] [-- command [arg [arg ...]]]``
 
 Wait for services to be ready and optionally exec command.
 
 positional arguments:
-  service               A service to wait for. Supported protocols:
-                        "tcp://host:port/", "unix:///path/to/domain.sock".
+  service               A service to wait for. Supported protocols: "tcp://host:port/", "unix:///path/to/domain.sock".
   command               An optional command to exec.
 
 optional arguments:
