@@ -60,7 +60,7 @@ class UnixCheck(object):
         self.path = path
 
     def __call__(self):
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock = socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(0.1)
         with closing(sock):
             return sock.connect_ex(self.path) == 0
