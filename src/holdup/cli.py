@@ -122,6 +122,6 @@ def main():
         if options.no_abort:
             print('Failed checks:', ', '.join(str(check) for check in pending))
         else:
-            parser.exit(1, 'Failed service checks: %s. Aborting!' % ', '.join(str(check) for check in pending))
+            parser.exit(1, 'Failed service checks: %s. Aborting!\n' % ', '.join(str(check) for check in pending))
     if command:
         os.execvp(command[0], command)
