@@ -1,42 +1,49 @@
 import os
 import socket
-import sys
 import threading
 
-from holdup.cli import main
+import pytest
+
+pytest_plugins = 'pytester',
 
 
-def test_main(monkeypatch):
+@pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success")']])
+def extra(request):
+    return request.param
+
+
+def test_normal(testdir, extra):
     tcp = socket.socket()
     tcp.bind(('127.0.0.1', 0))
     tcp.listen(1)
     _, port = tcp.getsockname()
-    t = threading.Thread(target=tcp.accept).start()
+    t = threading.Thread(target=tcp.accept)
+    t.start()
 
     tcp = socket.socket(socket.AF_UNIX)
     if os.path.exists('/tmp/holdup-test.sock'):
         os.unlink('/tmp/holdup-test.sock')
     tcp.bind('/tmp/holdup-test.sock')
     tcp.listen(1)
-    monkeypatch.setattr(sys, 'argv', [
+    result = testdir.run(
         'holdup',
         '-t', '0.5',
         'tcp://localhost:%s' % port,
         'unix:///tmp/holdup-test.sock',
-        '--',
-        'python', '-c', 'print("success")'
-    ])
-    main()
+        *extra
+    )
+    if extra:
+        result.stdout.fnmatch_lines(['success'])
+    t.join()
 
-    monkeypatch.setattr(sys, 'argv', [
+
+def test_no_abort(testdir, extra):
+    result = testdir.run(
         'holdup',
         '-t', '0.1',
         '-n',
         'tcp://localhost:0',
         'unix:///doesnt/exist',
-        '--',
-        'python', '-c', 'print("success")'
-    ])
-    main()
-
-    t.join()
+        *extra
+    )
+    result.stderr.fnmatch_lines(['Failed checks: tcp://localhost:0, unix:///doesnt/exist'])
