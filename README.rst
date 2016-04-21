@@ -71,7 +71,7 @@ Installation
 Documentation
 =============
 
-Usage: ``holdup [-h] [-f] [-t SECONDS] [-n] [service [service ...]] [-- command [arg [arg ...]]]``
+Usage: ``holdup [-h] [-t SECONDS] [-n] service [service ...] [command]``
 
 Wait for services to be ready and optionally exec command.
 
