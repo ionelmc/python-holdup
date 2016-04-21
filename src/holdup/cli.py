@@ -120,7 +120,7 @@ def main():
         pending = list(filter_passing(pending))
     if pending:
         if options.no_abort:
-            print('Failed checks:', ', '.join(str(check) for check in pending))
+            print('Failed checks:', ', '.join(str(check) for check in pending), file=sys.stderr)
         else:
             parser.exit(1, 'Failed service checks: %s. Aborting!\n' % ', '.join(str(check) for check in pending))
     if command:
