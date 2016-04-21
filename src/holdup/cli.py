@@ -83,7 +83,7 @@ def filter_passing(checks):
 
 
 parser = argparse.ArgumentParser(
-    usage='%(prog)s [-h] [-f] [-t SECONDS] [-n] [service [service ...]] [-- command [arg [arg ...]]]',
+    usage='%(prog)s [-h] [-t SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]',
     description="Wait for services to be ready and optionally exec command."
 )
 parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
