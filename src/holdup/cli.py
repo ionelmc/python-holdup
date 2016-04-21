@@ -18,9 +18,9 @@ from __future__ import print_function
 
 import argparse
 import os
+import socket
 import sys
 from contextlib import closing
-from socket import socket
 from time import time
 
 
@@ -46,7 +46,7 @@ class TcpCheck(object):
         self.port = port
 
     def __call__(self):
-        sock = socket()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(0.1)
         with closing(sock):
             return sock.connect_ex((self.host, self.port)) == 0
@@ -60,7 +60,7 @@ class UnixCheck(object):
         self.path = path
 
     def __call__(self):
-        sock = socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(0.1)
         with closing(sock):
             return sock.connect_ex(self.path) == 0
