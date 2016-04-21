@@ -63,7 +63,8 @@ setup(
         'Topic :: Utilities',
     ],
     keywords=[
-        # eg: 'keyword1', 'keyword2', 'keyword3',
+        'wait', 'port', 'service', 'docker', 'unix', 'domain', 'socket', 'tcp'
+        'waiter', 'holdup', 'hold-up',
     ],
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
