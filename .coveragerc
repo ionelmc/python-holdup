@@ -1,0 +1,14 @@
+[paths]
+source =
+   src/holdup
+   */site-packages/holdup
+
+[run]
+branch = True
+source = holdup
+parallel = true
+
+[report]
+show_missing = true
+precision = 2
+omit = *migrations*
