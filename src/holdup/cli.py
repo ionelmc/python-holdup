@@ -18,11 +18,11 @@ from __future__ import print_function
 
 import argparse
 import os
+import sys
 from contextlib import closing
 from socket import socket
 from time import time
 
-import sys
 
 parser = argparse.ArgumentParser(
     usage='%(prog)s [-h] [-f] [-t SECONDS] [-n] [service [service ...]] [-- command [arg [arg ...]]]',
