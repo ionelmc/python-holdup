@@ -46,4 +46,4 @@ def test_no_abort(testdir, extra):
         'unix:///doesnt/exist',
         *extra
     )
-    result.stderr.fnmatch_lines(['Failed checks: tcp://localhost:0, unix:///doesnt/exist'])
+    result.stderr.fnmatch_lines(['Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'])
