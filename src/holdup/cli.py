@@ -78,7 +78,6 @@ def filter_passing(checks):
             if not check():
                 yield check
         except Exception as exc:
-            print(check, exc)
             yield check
 
 
