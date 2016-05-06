@@ -21,7 +21,8 @@ import os
 import socket
 import sys
 from contextlib import closing
-from time import time, sleep
+from time import sleep
+from time import time
 
 
 class Check(object):
