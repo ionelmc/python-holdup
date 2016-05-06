@@ -21,33 +21,51 @@ import os
 import socket
 import sys
 from contextlib import closing
-from time import time
+from time import time, sleep
 
 
-class TcpCheck(object):
+class Check(object):
+    error = None
+
+    def is_passing(self):
+        try:
+            self.run()
+        except Exception as exc:
+            self.error = exc
+        else:
+            return True
+
+    def __repr__(self):
+        if self.error:
+            return '{0} ({0.error})'.format(self)
+        else:
+            return str(self)
+
+
+class TcpCheck(Check):
     def __init__(self, host, port):
         self.host = host
         self.port = port
 
-    def __call__(self):
+    def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(0.1)
         with closing(sock):
-            return sock.connect_ex((self.host, self.port)) == 0
+            sock.connect((self.host, self.port))
 
     def __str__(self):
         return 'tcp://{0.host}:{0.port}'.format(self)
 
 
-class UnixCheck(object):
+class UnixCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def __call__(self):
+    def run(self):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(0.1)
         with closing(sock):
-            return sock.connect_ex(self.path) == 0
+            sock.connect(self.path)
 
     def __str__(self):
         return 'unix://{0.path}'.format(self)
@@ -72,17 +90,8 @@ def parse_service(service):
         raise argparse.ArgumentTypeError('Unknown protocol in %r. Must be "tcp" or "unix".' % service)
 
 
-def filter_passing(checks):
-    for check in checks:
-        try:
-            if not check():
-                yield check
-        except Exception as exc:
-            yield check
-
-
 parser = argparse.ArgumentParser(
-    usage='%(prog)s [-h] [-t SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]',
+    usage='%(prog)s [-h] [-t SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]',
     description="Wait for services to be ready and optionally exec command."
 )
 parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
@@ -92,6 +101,8 @@ parser.add_argument('command', nargs=argparse.OPTIONAL,
                     help='An optional command to exec.')
 parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=5.0,
                     help='Time to wait for services to be ready. Default: %(default)s')
+parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.2,
+                    help='How often to check. Default: %(default)s')
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
@@ -116,11 +127,14 @@ def main():
     pending = list(options.service)
     start = time()
     while pending and time() - start < options.timeout:
-        pending = list(filter_passing(pending))
+        lapse = time()
+        pending = [check for check in pending if not check.is_passing()]
+        sleep(options.interval - time() + lapse)
+
     if pending:
         if options.no_abort:
-            print('Failed checks:', ', '.join(str(check) for check in pending), file=sys.stderr)
+            print('Failed checks:', ', '.join(repr(check) for check in pending), file=sys.stderr)
         else:
-            parser.exit(1, 'Failed service checks: %s. Aborting!\n' % ', '.join(str(check) for check in pending))
+            parser.exit(1, 'Failed service checks: %s. Aborting!\n' % ', '.join(repr(check) for check in pending))
     if command:
         os.execvp(command[0], command)

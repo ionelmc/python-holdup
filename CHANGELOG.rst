@@ -3,10 +3,11 @@ Changelog
 =========
 
 
-1.0.1 (2016-05-06)
+1.1.0 (2016-05-06)
 ------------------
 
 * Removed debug print.
+* Added ``--interval`` option for how often to check. No more spinloops.
 
 1.0.0 (2016-04-22)
 ------------------
