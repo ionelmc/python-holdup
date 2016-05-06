@@ -71,7 +71,7 @@ Installation
 Documentation
 =============
 
-Usage: ``holdup [-h] [-t SECONDS] [-n] service [service ...] [command]``
+Usage: ``holdup [-h] [-t SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]``
 
 Wait for services to be ready and optionally exec command.
 
@@ -80,11 +80,10 @@ positional arguments:
   command               An optional command to exec.
 
 optional arguments:
-  -h, --help            show this help message and exit
+  -h, --help            Show this help message and exit.
   -t SECONDS, --timeout SECONDS
                         Time to wait for services to be ready. Default: 5.0
-  -n, --no-abort        Ignore failed services. This makes `holdup` return 0
-                        exit code regardless of services actually responding.
+  -n, --no-abort        Ignore failed services. This makes `holdup` return 0 exit code regardless of services actually responding.
 
 Development
 ===========
