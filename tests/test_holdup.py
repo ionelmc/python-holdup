@@ -54,11 +54,13 @@ def test_no_abort(testdir, extra):
 
 
 def test_not_readable(testdir, extra):
+    foobar = testdir.maketxtfile(foobar='')
+    foobar.chmod(0)
     result = testdir.run(
         'holdup',
         '-t', '0.1',
         '-n',
-        'path:///dev/console',
+        'path://%s' % foobar,
         *extra
     )
-    result.stderr.fnmatch_lines(["Failed checks: path:///dev/console (Failed access('/dev/console', 'R_OK') test.)"])
+    result.stderr.fnmatch_lines(["Failed checks: path://%s (Failed access('%s', 'R_OK') test.)" % (foobar, foobar)])
