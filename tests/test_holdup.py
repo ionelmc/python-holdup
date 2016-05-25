@@ -23,12 +23,15 @@ def test_normal(testdir, extra):
     tcp = socket.socket(socket.AF_UNIX)
     if os.path.exists('/tmp/holdup-test.sock'):
         os.unlink('/tmp/holdup-test.sock')
+    with open('/tmp/holdup-test', 'w'):
+        pass
     tcp.bind('/tmp/holdup-test.sock')
     tcp.listen(1)
     result = testdir.run(
         'holdup',
         '-t', '0.5',
         'tcp://localhost:%s' % port,
+        'path:///tmp/holdup-test',
         'unix:///tmp/holdup-test.sock',
         *extra
     )
@@ -43,7 +46,19 @@ def test_no_abort(testdir, extra):
         '-t', '0.1',
         '-n',
         'tcp://localhost:0',
+        'path:///doesnt/exist',
         'unix:///doesnt/exist',
         *extra
     )
-    result.stderr.fnmatch_lines(['Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'])
+    result.stderr.fnmatch_lines(['Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), path:///doesnt/exist ([[]Errno 2[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'])
+
+
+def test_not_readable(testdir, extra):
+    result = testdir.run(
+        'holdup',
+        '-t', '0.1',
+        '-n',
+        'path:///dev/console',
+        *extra
+    )
+    result.stderr.fnmatch_lines(["Failed checks: path:///dev/console (Failed access('/dev/console', 'R_OK') test.)"])

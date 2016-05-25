@@ -72,6 +72,19 @@ class UnixCheck(Check):
         return 'unix://{0.path}'.format(self)
 
 
+class PathCheck(Check):
+    def __init__(self, path):
+        self.path = path
+
+    def run(self):
+        os.stat(self.path)
+        if not os.access(self.path, os.R_OK):
+            raise Exception("Failed access(%r, 'R_OK') test." % self.path)
+
+    def __str__(self):
+        return 'path://{0.path}'.format(self)
+
+
 def parse_service(service):
     if '://' not in service:
         raise argparse.ArgumentTypeError('Invalid service spec %r. Must have "://".' % service)
@@ -87,6 +100,8 @@ def parse_service(service):
         return TcpCheck(host, port)
     elif proto == 'unix':
         return UnixCheck(value)
+    elif proto == 'path':
+        return PathCheck(value)
     else:
         raise argparse.ArgumentTypeError('Unknown protocol in %r. Must be "tcp" or "unix".' % service)
 
@@ -97,7 +112,8 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                     help='A service to wait for. '
-                         'Supported protocols: "tcp://host:port/", "unix:///path/to/domain.sock".')
+                         'Supported protocols: "tcp://host:port/", "path:///path/to/something", '
+                         '"unix:///path/to/domain.sock".')
 parser.add_argument('command', nargs=argparse.OPTIONAL,
                     help='An optional command to exec.')
 parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=5.0,
