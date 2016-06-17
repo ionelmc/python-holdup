@@ -2,6 +2,10 @@
 Changelog
 =========
 
+1.2.1 (2016-06-17)
+------------------
+
+* Handle situation where internal operations would take more than planned.
 
 1.2.0 (2016-05-25)
 ------------------
