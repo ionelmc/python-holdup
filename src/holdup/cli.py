@@ -146,7 +146,7 @@ def main():
     while pending and time() - start < options.timeout:
         lapse = time()
         pending = [check for check in pending if not check.is_passing()]
-        sleep(options.interval - time() + lapse)
+        sleep(max(0, options.interval - time() + lapse))
 
     if pending:
         if options.no_abort:
