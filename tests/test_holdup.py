@@ -30,7 +30,7 @@ def test_normal(testdir, extra):
     result = testdir.run(
         'holdup',
         '-t', '0.5',
-        'tcp://localhost:%s' % port,
+        'tcp://localhost:%s/' % port,
         'path:///tmp/holdup-test',
         'unix:///tmp/holdup-test.sock',
         *extra
@@ -46,6 +46,7 @@ def test_no_abort(testdir, extra):
         '-t', '0.1',
         '-n',
         'tcp://localhost:0',
+        'tcp://localhost:0/',
         'path:///doesnt/exist',
         'unix:///doesnt/exist',
         *extra
