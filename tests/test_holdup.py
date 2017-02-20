@@ -20,13 +20,13 @@ def test_normal(testdir, extra):
     t = threading.Thread(target=tcp.accept)
     t.start()
 
-    tcp = socket.socket(socket.AF_UNIX)
+    uds = socket.socket(socket.AF_UNIX)
     if os.path.exists('/tmp/holdup-test.sock'):
         os.unlink('/tmp/holdup-test.sock')
     with open('/tmp/holdup-test', 'w'):
         pass
-    tcp.bind('/tmp/holdup-test.sock')
-    tcp.listen(1)
+    uds.bind('/tmp/holdup-test.sock')
+    uds.listen(1)
     result = testdir.run(
         'holdup',
         '-t', '0.5',
@@ -40,6 +40,68 @@ def test_normal(testdir, extra):
     t.join()
 
 
+def test_any(testdir, extra):
+    tcp = socket.socket()
+    tcp.bind(('127.0.0.1', 0))
+    _, port = tcp.getsockname()
+
+    uds = socket.socket(socket.AF_UNIX)
+    if os.path.exists('/tmp/holdup-test.sock'):
+        os.unlink('/tmp/holdup-test.sock')
+    uds.bind('/tmp/holdup-test.sock')
+    uds.listen(1)
+    result = testdir.run(
+        'holdup',
+        '-t', '0.5',
+        'tcp://localhost:%s/,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock' % port,
+        *extra
+    )
+    if extra:
+        result.stdout.fnmatch_lines(['success'])
+
+
+def test_any_same_proto(testdir, extra):
+    tcp1 = socket.socket()
+    tcp1.bind(('127.0.0.1', 0))
+    _, port1 = tcp1.getsockname()
+
+    tcp2 = socket.socket()
+    tcp2.bind(('127.0.0.1', 0))
+    tcp2.listen(1)
+    _, port2 = tcp2.getsockname()
+    t = threading.Thread(target=tcp2.accept)
+    t.start()
+
+    result = testdir.run(
+        'holdup',
+        '-t', '0.5',
+        'tcp://localhost:%s,localhost:%s/' % (port1, port2),
+        *extra
+    )
+    if extra:
+        result.stdout.fnmatch_lines(['success'])
+    t.join()
+
+
+def test_any_failed(testdir):
+    tcp = socket.socket()
+    tcp.bind(('127.0.0.1', 0))
+    _, port = tcp.getsockname()
+
+    result = testdir.run(
+        'holdup',
+        '-t', '0.5',
+        'tcp://localhost:%s/,path:///doesnt/exist,unix:///doesnt/exist' % port,
+    )
+    result.stdout.fnmatch_lines([
+        'Failed service checks: any(tcp://localhost:%s,path:///doesnt/exist,unix:///doesnt/exist) '
+        '(Nothing succedeed: '
+        'tcp://localhost:%s ([[]Errno 111[]]*), '
+        'path:///doesnt/exist ([[]Errno 2[]]*), '
+        'unix:///doesnt/exist ([[]Errno 2[]]*). Aborting!' % (port, port)
+    ])
+
+
 def test_no_abort(testdir, extra):
     result = testdir.run(
         'holdup',
@@ -51,7 +113,10 @@ def test_no_abort(testdir, extra):
         'unix:///doesnt/exist',
         *extra
     )
-    result.stderr.fnmatch_lines(['Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), path:///doesnt/exist ([[]Errno 2[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'])
+    result.stderr.fnmatch_lines([
+        'Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), '
+        'path:///doesnt/exist ([[]Errno 2[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'
+    ])
 
 
 def test_not_readable(testdir, extra):

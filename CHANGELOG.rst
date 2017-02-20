@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.3.0 (2017-02-21)
+------------------
+
+* Add support for "any" service check (service syntax with comma).
+
 1.2.1 (2016-06-17)
 ------------------
 
