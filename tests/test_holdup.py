@@ -95,7 +95,7 @@ def test_any_failed(testdir):
     )
     result.stdout.fnmatch_lines([
         'Failed service checks: any(tcp://localhost:%s,path:///doesnt/exist,unix:///doesnt/exist) '
-        '(Nothing succedeed: '
+        '(Nothing succeeded: '
         'tcp://localhost:%s ([[]Errno 111[]]*), '
         'path:///doesnt/exist ([[]Errno 2[]]*), '
         'unix:///doesnt/exist ([[]Errno 2[]]*). Aborting!' % (port, port)
