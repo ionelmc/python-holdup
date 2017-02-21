@@ -76,13 +76,14 @@ Usage: ``holdup [-h] [-t SECONDS] [-i SECONDS] [-n] service [service ...] [-- co
 Wait for services to be ready and optionally exec command.
 
 positional arguments:
-  service               A service to wait for. Supported protocols:
-                        "tcp://host:port/", "path:///path/to/something",
-                        "unix:///path/to/domain.sock". Join protocols with a
-                        comma to make holdup exit at the first passing one,
-                        eg: tcp://host:1,host:2 or tcp://host:1,tcp://host:2
-                        are equivalent and mean "any that pass".
-  command               An optional command to exec.
+  service
+    A service to wait for. Supported protocols: "tcp://host:port/", "path:///path/to/something",
+    "unix:///path/to/domain.sock". Join protocols with a
+    comma to make holdup exit at the first passing one,
+    eg: tcp://host:1,host:2 or tcp://host:1,tcp://host:2
+    are equivalent and mean "any that pass".
+  command
+    An optional command to exec.
 
 optional arguments:
   -h, --help            Show this help message and exit.
