@@ -11,7 +11,8 @@ Overview
       - | |travis| |appveyor| |requires|
         | |codecov|
     * - package
-      - |version| |downloads| |wheel| |supported-versions| |supported-implementations|
+      - | |version| |wheel| |supported-versions| |supported-implementations|
+        | |commits-since|
 
 .. |docs| image:: https://readthedocs.org/projects/python-holdup/badge/?style=flat
     :target: https://readthedocs.org/projects/python-holdup
@@ -33,23 +34,23 @@ Overview
     :alt: Coverage Status
     :target: https://codecov.io/github/ionelmc/python-holdup
 
-.. |version| image:: https://img.shields.io/pypi/v/holdup.svg?style=flat
+.. |version| image:: https://img.shields.io/pypi/v/holdup.svg
     :alt: PyPI Package latest release
     :target: https://pypi.python.org/pypi/holdup
 
-.. |downloads| image:: https://img.shields.io/pypi/dm/holdup.svg?style=flat
-    :alt: PyPI Package monthly downloads
-    :target: https://pypi.python.org/pypi/holdup
+.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v1.3.0.svg
+    :alt: Commits since latest release
+    :target: https://github.com/ionelmc/python-holdup/compare/v1.3.0...master
 
-.. |wheel| image:: https://img.shields.io/pypi/wheel/holdup.svg?style=flat
+.. |wheel| image:: https://img.shields.io/pypi/wheel/holdup.svg
     :alt: PyPI Wheel
     :target: https://pypi.python.org/pypi/holdup
 
-.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/holdup.svg?style=flat
+.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/holdup.svg
     :alt: Supported versions
     :target: https://pypi.python.org/pypi/holdup
 
-.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/holdup.svg?style=flat
+.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/holdup.svg
     :alt: Supported implementations
     :target: https://pypi.python.org/pypi/holdup
 
