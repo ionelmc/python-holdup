@@ -69,7 +69,11 @@ class HttpCheck(Check):
         self.url = url
 
     def run(self, timeout):
-        with closing(urlopen(self.url, timeout=timeout, context=ssl.create_default_context())) as req:
+        if hasattr(ssl, 'create_default_context'):
+            kwargs = {'context': ssl.create_default_context()}
+        else:
+            kwargs = {}
+        with closing(urlopen(self.url, timeout=timeout, **kwargs)) as req:
             status = req.getcode()
             if status != 200:
                 raise Exception("Expected status code 200, got: %r." % status)
