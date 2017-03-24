@@ -21,13 +21,14 @@ import os
 import socket
 import ssl
 import sys
+from contextlib import closing
+from time import sleep
+from time import time
+
 try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
-from contextlib import closing
-from time import sleep
-from time import time
 
 
 class Check(object):
