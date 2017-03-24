@@ -19,7 +19,12 @@ from __future__ import print_function
 import argparse
 import os
 import socket
+import ssl
 import sys
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 from contextlib import closing
 from time import sleep
 from time import time
@@ -28,9 +33,9 @@ from time import time
 class Check(object):
     error = None
 
-    def is_passing(self):
+    def is_passing(self, timeout):
         try:
-            self.run()
+            self.run(timeout)
         except Exception as exc:
             self.error = exc
         else:
@@ -48,9 +53,9 @@ class TcpCheck(Check):
         self.host = host
         self.port = port
 
-    def run(self):
+    def run(self, timeout):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(0.1)
+        sock.settimeout(timeout)
         with closing(sock):
             sock.connect((self.host, self.port))
 
@@ -58,13 +63,27 @@ class TcpCheck(Check):
         return 'tcp://{0.host}:{0.port}'.format(self)
 
 
+class HttpCheck(Check):
+    def __init__(self, url):
+        self.url = url
+
+    def run(self, timeout):
+        with closing(urlopen(self.url, timeout=timeout, context=ssl.create_default_context())) as req:
+            status = req.getcode()
+            if status != 200:
+                raise Exception("Expected status code 200, got: %r." % status)
+
+    def __str__(self):
+        return self.url
+
+
 class UnixCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def run(self):
+    def run(self, timeout):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(0.1)
+        sock.settimeout(timeout)
         with closing(sock):
             sock.connect(self.path)
 
@@ -76,7 +95,7 @@ class PathCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def run(self):
+    def run(self, _):
         os.stat(self.path)
         if not os.access(self.path, os.R_OK):
             raise Exception("Failed access(%r, 'R_OK') test." % self.path)
@@ -89,10 +108,10 @@ class AnyCheck(Check):
     def __init__(self, checks):
         self.checks = checks
 
-    def run(self):
+    def run(self, timeout):
         errors = []
         for check in self.checks:
-            if check.is_passing():
+            if check.is_passing(timeout):
                 return
             else:
                 errors.append(check)
@@ -111,7 +130,7 @@ def parse_service(service):
     if ',' in value:
         return AnyCheck([parse_value(part, proto) for part in value.split(',')])
     else:
-            return parse_value(value, proto)
+        return parse_value(value, proto)
 
 
 def parse_value(value, proto):
@@ -130,24 +149,29 @@ def parse_value(value, proto):
         return UnixCheck(value)
     elif proto == 'path':
         return PathCheck(value)
+    elif proto in ('http', 'https'):
+        return HttpCheck('%s://%s' % (proto, value))
     else:
         raise argparse.ArgumentTypeError('Unknown protocol %r in %r. Must be "tcp", "path" or "unix".' % (proto, value))
 
 
 parser = argparse.ArgumentParser(
-    usage='%(prog)s [-h] [-t SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]',
+    usage='%(prog)s [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]',
     description="Wait for services to be ready and optionally exec command."
 )
 parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                     help='A service to wait for. '
                          'Supported protocols: "tcp://host:port/", "path:///path/to/something", '
-                         '"unix:///path/to/domain.sock". Join protocols with a comma to make holdup exit at the first '
+                         '"unix:///path/to/domain.sock", "http://urn", "http://urn" (status 200 expected). '
+                         'Join protocols with a comma to make holdup exit at the first '
                          'passing one, eg: tcp://host:1,host:2 or tcp://host:1,tcp://host:2 are equivalent and mean '
                          '"any that pass".')
 parser.add_argument('command', nargs=argparse.OPTIONAL,
                     help='An optional command to exec.')
 parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=5.0,
                     help='Time to wait for services to be ready. Default: %(default)s')
+parser.add_argument('-T', '--check-timeout', metavar='SECONDS', type=float, default=1.0,
+                    help='Time to wait for a single check. Default: %(default)s')
 parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.2,
                     help='How often to check. Default: %(default)s')
 parser.add_argument('-n', '--no-abort', action='store_true',
@@ -171,12 +195,19 @@ def main():
     else:
         argv, command = sys.argv[1:], None
     options = parser.parse_args(args=argv)
+    if options.timeout < options.check_timeout:
+        if options.check_timeout == 1.0:
+            options.check_timeout = options.timeout
+        else:
+            parser.error('--timeout value must be greater than --check-timeout value!')
     pending = list(options.service)
     start = time()
-    while pending and time() - start < options.timeout:
+    at_least_once = True
+    while at_least_once or pending and time() - start < options.timeout:
         lapse = time()
-        pending = [check for check in pending if not check.is_passing()]
+        pending = [check for check in pending if not check.is_passing(options.check_timeout)]
         sleep(max(0, options.interval - time() + lapse))
+        at_least_once = False
 
     if pending:
         if options.no_abort:

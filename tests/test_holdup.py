@@ -40,6 +40,22 @@ def test_normal(testdir, extra):
     t.join()
 
 
+@pytest.mark.parametrize('status', [200, 404])
+@pytest.mark.parametrize('proto', ['http', 'https'])
+def test_http(testdir, extra, status, proto):
+    result = testdir.run(
+        'holdup',
+        '-T', '5',
+        '%s://httpbin.org/status/%s' % (proto, status),
+        *extra
+    )
+    if extra:
+        if status == 200:
+            result.stdout.fnmatch_lines(['success'])
+        else:
+            result.stderr.fnmatch_lines(['*HTTP Error 404*'])
+
+
 def test_any(testdir, extra):
     tcp = socket.socket()
     tcp.bind(('127.0.0.1', 0))
@@ -130,3 +146,15 @@ def test_not_readable(testdir, extra):
         *extra
     )
     result.stderr.fnmatch_lines(["Failed checks: path://%s (Failed access('%s', 'R_OK') test.)" % (foobar, foobar)])
+
+
+def test_bad_timeout(testdir):
+    result = testdir.run(
+        'holdup',
+        '-t', '0.1',
+        '-T', '2',
+        'path:///'
+    )
+    result.stderr.fnmatch_lines([
+        '*error: --timeout value must be greater than --check-timeout value!'
+    ])
