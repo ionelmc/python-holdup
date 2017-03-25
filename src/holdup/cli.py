@@ -69,7 +69,7 @@ class HttpCheck(Check):
         self.url = url
 
     def run(self, timeout):
-        if hasattr(ssl, 'create_default_context'):
+        if hasattr(ssl, 'create_default_context') and 'context' in urlopen.__code__.co_varnames:
             kwargs = {'context': ssl.create_default_context()}
         else:
             kwargs = {}
