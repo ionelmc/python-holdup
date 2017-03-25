@@ -26,6 +26,11 @@ from time import sleep
 from time import time
 
 try:
+    from inspect import getfullargspec as getargspec
+except ImportError:
+    from inspect import getargspec
+
+try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
@@ -69,7 +74,7 @@ class HttpCheck(Check):
         self.url = url
 
     def run(self, timeout):
-        if hasattr(ssl, 'create_default_context') and 'context' in urlopen.__code__.co_varnames:
+        if hasattr(ssl, 'create_default_context') and 'context' in getargspec(urlopen).args:
             kwargs = {'context': ssl.create_default_context()}
         else:
             kwargs = {}
