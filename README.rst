@@ -72,27 +72,34 @@ Installation
 Documentation
 =============
 
-Usage: ``holdup [-h] [-t SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]``
+Usage: ``holdup [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]``
 
 Wait for services to be ready and optionally exec command.
 
-positional arguments:
-  service
-    A service to wait for. Supported protocols: "tcp://host:port/", "path:///path/to/something",
-    "unix:///path/to/domain.sock". Join protocols with a
-    comma to make holdup exit at the first passing one,
-    eg: tcp://host:1,host:2 or tcp://host:1,tcp://host:2
-    are equivalent and mean "any that pass".
-  command
+Positional arguments:
+  ``service``
+    A service to wait for. Supported protocols:
+    "tcp://host:port/", "path:///path/to/something",
+    "unix:///path/to/domain.sock", "http://urn",
+    "http://urn" (status 200 expected). Join protocols
+    with a comma to make holdup exit at the first passing
+    one, eg: tcp://host:1,host:2 or
+    tcp://host:1,tcp://host:2 are equivalent and mean "any
+    that pass".
+  ``command``
     An optional command to exec.
 
-optional arguments:
-  -h, --help            Show this help message and exit.
+Optional arguments:
+  -h, --help            show this help message and exit
   -t SECONDS, --timeout SECONDS
                         Time to wait for services to be ready. Default: 5.0
+  -T SECONDS, --check-timeout SECONDS
+                        Time to wait for a single check. Default: 1.0
   -i SECONDS, --interval SECONDS
                         How often to check. Default: 0.2
-  -n, --no-abort        Ignore failed services. This makes `holdup` return 0 exit code regardless of services actually responding.
+  -n, --no-abort        Ignore failed services. This makes `holdup` return 0
+                        exit code regardless of services actually responding.
+
 
 Development
 ===========
