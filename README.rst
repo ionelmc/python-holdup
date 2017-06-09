@@ -80,12 +80,13 @@ Positional arguments:
   ``service``
     A service to wait for. Supported protocols:
     "tcp://host:port/", "path:///path/to/something",
-    "unix:///path/to/domain.sock", "http://urn",
-    "http://urn" (status 200 expected). Join protocols
-    with a comma to make holdup exit at the first passing
-    one, eg: tcp://host:1,host:2 or
+    "unix:///path/to/domain.sock", "eval://expr",
+    "http://urn", "http://urn" (status 200 expected). Join
+    protocols with a comma to make holdup exit at the
+    first passing one, eg: tcp://host:1,host:2 or
     tcp://host:1,tcp://host:2 are equivalent and mean "any
     that pass".
+
   ``command``
     An optional command to exec.
 

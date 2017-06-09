@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.5.0 (2017-06-07)
+------------------
+
+* Added an ``eval://expression`` protocol for weird user-defined checks.
+
 1.4.0 (2017-03-27)
 ------------------
 

@@ -37,6 +37,7 @@ def test_normal(testdir, extra):
     )
     if extra:
         result.stdout.fnmatch_lines(['success'])
+    assert result.ret == 0
     t.join()
 
 
@@ -74,6 +75,7 @@ def test_any(testdir, extra):
     )
     if extra:
         result.stdout.fnmatch_lines(['success'])
+    assert result.ret == 0
 
 
 def test_any_same_proto(testdir, extra):
@@ -96,6 +98,7 @@ def test_any_same_proto(testdir, extra):
     )
     if extra:
         result.stdout.fnmatch_lines(['success'])
+    assert result.ret == 0
     t.join()
 
 
@@ -158,3 +161,82 @@ def test_bad_timeout(testdir):
     result.stderr.fnmatch_lines([
         '*error: --timeout value must be greater than --check-timeout value!'
     ])
+
+
+def test_eval_bad_import(testdir):
+    result = testdir.run(
+        'holdup',
+        'eval://foobar123.foo()'
+    )
+    result.stderr.fnmatch_lines([
+        "*error: argument service: Invalid service spec 'foobar123.foo()'. Import error: No module named*"
+    ])
+
+
+def test_eval_bad_expr(testdir):
+    result = testdir.run(
+        'holdup',
+        'eval://foobar123.foo(.)'
+    )
+    result.stderr.fnmatch_lines([
+        "*error: argument service: Invalid service spec 'foobar123.foo(.)'. Parse error:",
+        '  foobar123.foo(.)',
+        '                ^',
+        'invalid syntax (<unknown>, line 1)',
+    ])
+
+
+def test_eval_bad_pg(testdir):
+    result = testdir.run(
+        'holdup',
+        '-t', '0.1',
+        'eval://psycopg2.connect("dbname=foo host=0.0.0.0")'
+    )
+    result.stderr.fnmatch_lines([
+        'Failed service checks: eval://psycopg2.connect* (could not connect to server:*'
+    ])
+
+
+def test_eval_falsey(testdir):
+    result = testdir.run(
+        'holdup',
+        '-t', '0',
+        'eval://None'
+    )
+    result.stderr.fnmatch_lines([
+        "Failed service checks: eval://None (Failed to evaluate 'None'. Result None is falsey.). Aborting!"
+    ])
+    assert result.ret == 1
+
+
+def test_eval_distutils(testdir, extra):
+    result = testdir.run(
+        'holdup',
+        'eval://distutils.spawn.find_executable("find")',
+        *extra
+    )
+    if extra:
+        result.stdout.fnmatch_lines(['success'])
+    assert result.ret == 0
+
+
+def test_eval_comma(testdir, extra):
+    result = testdir.run(
+        'holdup',
+        'eval://os.path.join("foo", "bar")',
+        *extra
+    )
+    if extra:
+        result.stdout.fnmatch_lines(['success'])
+    assert result.ret == 0
+
+
+def test_eval_comma_anycheck(testdir, extra):
+    result = testdir.run(
+        'holdup',
+        'path://whatever123,eval://os.path.join("foo", "bar")',
+        *extra
+    )
+    if extra:
+        result.stdout.fnmatch_lines(['success'])
+    assert result.ret == 0

@@ -17,6 +17,7 @@ Why does this file exist, and why not put this in __main__?
 from __future__ import print_function
 
 import argparse
+import ast
 import os
 import socket
 import ssl
@@ -24,6 +25,11 @@ import sys
 from contextlib import closing
 from time import sleep
 from time import time
+
+try:
+    import builtins
+except ImportError:
+    import __builtin__ as builtins
 
 try:
     from inspect import getfullargspec as getargspec
@@ -114,6 +120,34 @@ class PathCheck(Check):
         return 'path://{0.path}'.format(self)
 
 
+class EvalCheck(Check):
+    def __init__(self, expr):
+        self.expr = expr
+        self.ns = {}
+        try:
+            tree = ast.parse(expr)
+        except SyntaxError as exc:
+            raise argparse.ArgumentTypeError('Invalid service spec %r. Parse error:\n'
+                                             '  %s %s^\n'
+                                             '%s' % (expr, exc.text, ' '*exc.offset, exc))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name):
+                if not hasattr(builtins, node.id):
+                    try:
+                        __import__(node.id)
+                    except ImportError as exc:
+                        raise argparse.ArgumentTypeError('Invalid service spec %r. Import error: %s' % (expr, exc))
+                    self.ns[node.id] = sys.modules[node.id]
+
+    def run(self, _):
+        result = eval(self.expr, dict(self.ns), dict(self.ns))
+        if not result:
+            raise Exception("Failed to evaluate %r. Result %r is falsey." % (self.expr, result))
+
+    def __str__(self):
+        return 'eval://{0.expr}'.format(self)
+
+
 class AnyCheck(Check):
     def __init__(self, checks):
         self.checks = checks
@@ -137,8 +171,14 @@ def parse_service(service):
         raise argparse.ArgumentTypeError('Invalid service spec %r. Must have "://".' % service)
     proto, value = service.split('://', 1)
 
-    if ',' in value:
-        return AnyCheck([parse_value(part, proto) for part in value.split(',')])
+    if ',' in value and proto != 'eval':
+        parts = value.split(',')
+        for pos, part in enumerate(parts):
+            if part.startswith('eval://'):
+                parts[pos] = ','.join(parts[pos:])
+                del parts[pos + 1:]
+                break
+        return AnyCheck([parse_value(part, proto) for part in parts])
     else:
         return parse_value(value, proto)
 
@@ -161,6 +201,8 @@ def parse_value(value, proto):
         return PathCheck(value)
     elif proto in ('http', 'https'):
         return HttpCheck('%s://%s' % (proto, value))
+    elif proto == 'eval':
+        return EvalCheck(value)
     else:
         raise argparse.ArgumentTypeError('Unknown protocol %r in %r. Must be "tcp", "path" or "unix".' % (proto, value))
 
@@ -172,7 +214,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                     help='A service to wait for. '
                          'Supported protocols: "tcp://host:port/", "path:///path/to/something", '
-                         '"unix:///path/to/domain.sock", "http://urn", "http://urn" (status 200 expected). '
+                         '"unix:///path/to/domain.sock", "eval://expr", '
+                         '"http://urn", "http://urn" (status 200 expected). '
                          'Join protocols with a comma to make holdup exit at the first '
                          'passing one, eg: tcp://host:1,host:2 or tcp://host:1,tcp://host:2 are equivalent and mean '
                          '"any that pass".')
