@@ -187,6 +187,7 @@ def test_eval_bad_expr(testdir):
 
 
 def test_eval_bad_pg(testdir):
+    pytest.importorskip('psycopg2')
     result = testdir.run(
         'holdup',
         '-t', '0.1',
