@@ -193,7 +193,7 @@ def test_eval_bad_pg(testdir):
         'eval://psycopg2.connect("dbname=foo host=0.0.0.0")'
     )
     result.stderr.fnmatch_lines([
-        'Failed service checks: eval://psycopg2.connect* (could not connect to server:*'
+        'Failed service checks: eval://psycopg2.connect* (*'
     ])
 
 
