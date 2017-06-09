@@ -181,7 +181,7 @@ def test_eval_bad_expr(testdir):
     result.stderr.fnmatch_lines([
         "*error: argument service: Invalid service spec 'foobar123.foo(.)'. Parse error:",
         '  foobar123.foo(.)',
-        '                ^',
+        '*               ^',
         'invalid syntax (<unknown>, line 1)',
     ])
 
