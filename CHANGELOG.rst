@@ -2,6 +2,12 @@
 Changelog
 =========
 
+1.5.1 (2018-01-30)
+------------------
+
+* Revert 5fe2cc8595115330901d890ea30adb81ef1d64c0
+* Add support to skip SSL Verification for an HTTPS check (``-k|--insecure``)
+
 1.5.0 (2017-06-07)
 ------------------
 

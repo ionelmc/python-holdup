@@ -45,9 +45,9 @@ except ImportError:
 class Check(object):
     error = None
 
-    def is_passing(self, timeout):
+    def is_passing(self, options):
         try:
-            self.run(timeout)
+            self.run(options)
         except Exception as exc:
             self.error = exc
         else:
@@ -65,9 +65,9 @@ class TcpCheck(Check):
         self.host = host
         self.port = port
 
-    def run(self, timeout):
+    def run(self, options):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
+        sock.settimeout(options.check_timeout)
         with closing(sock):
             sock.connect((self.host, self.port))
 
@@ -79,12 +79,12 @@ class HttpCheck(Check):
     def __init__(self, url):
         self.url = url
 
-    def run(self, timeout):
-        if hasattr(ssl, 'create_default_context') and 'context' in getargspec(urlopen).args:
-            kwargs = {'context': ssl.create_default_context()}
-        else:
-            kwargs = {}
-        with closing(urlopen(self.url, timeout=timeout, **kwargs)) as req:
+    def run(self, options):
+        ssl_ctx = ssl.create_default_context()
+        if options.insecure:
+            ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl.CERT_NONE
+        with closing(urlopen(self.url, timeout=options.check_timeout, context=ssl_ctx)) as req:
             status = req.getcode()
             if status != 200:
                 raise Exception("Expected status code 200, got: %r." % status)
@@ -97,9 +97,9 @@ class UnixCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def run(self, timeout):
+    def run(self, options):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
+        sock.settimeout(options.check_timeout)
         with closing(sock):
             sock.connect(self.path)
 
@@ -152,10 +152,10 @@ class AnyCheck(Check):
     def __init__(self, checks):
         self.checks = checks
 
-    def run(self, timeout):
+    def run(self, options):
         errors = []
         for check in self.checks:
-            if check.is_passing(timeout):
+            if check.is_passing(options):
                 return
             else:
                 errors.append(check)
@@ -230,7 +230,8 @@ parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
-
+parser.add_argument('-k', '--insecure', action='store_true',
+                    help='Disable SSL Certificate verification')
 
 def main():
     """
@@ -258,7 +259,7 @@ def main():
     at_least_once = True
     while at_least_once or pending and time() - start < options.timeout:
         lapse = time()
-        pending = [check for check in pending if not check.is_passing(options.check_timeout)]
+        pending = [check for check in pending if not check.is_passing(options)]
         sleep(max(0, options.interval - time() + lapse))
         at_least_once = False
 
