@@ -79,7 +79,7 @@ def test_any(testdir, extra):
             'holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: '
             'any(tcp://localhost:*,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
             'holdup: Passed check: path:///tmp/holdup-test',
-            'holdup: Passed check: any(tcp://localhost:40867,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
+            'holdup: Passed check: any(tcp://localhost:*,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
             'holdup: Executing: python -c print("success !")',
             'success !'
         ])
