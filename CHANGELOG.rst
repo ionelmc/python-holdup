@@ -2,6 +2,13 @@
 Changelog
 =========
 
+
+1.6.0 (2018-03-22)
+------------------
+
+* Added verbose mode (`-v` or ``--verbose``).
+* Changed default timeout to 60s (from 5s).
+
 1.5.0 (2017-06-07)
 ------------------
 
