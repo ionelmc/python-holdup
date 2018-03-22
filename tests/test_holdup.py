@@ -80,7 +80,7 @@ def test_any(testdir, extra):
             'any(tcp://localhost:*,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
             'holdup: Passed check: path:///tmp/holdup-test',
             'holdup: Passed check: any(tcp://localhost:*,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
-            'holdup: Executing: python -c print("success !")',
+            'holdup: Executing: python -c \'print("success !")\'',
             'success !'
         ])
     assert result.ret == 0
