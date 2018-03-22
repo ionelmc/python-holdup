@@ -7,7 +7,7 @@ import pytest
 pytest_plugins = 'pytester',
 
 
-@pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success")']])
+@pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success !")']])
 def extra(request):
     return request.param
 
@@ -36,7 +36,7 @@ def test_normal(testdir, extra):
         *extra
     )
     if extra:
-        result.stdout.fnmatch_lines(['success'])
+        result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0
     t.join()
 
@@ -52,7 +52,7 @@ def test_http(testdir, extra, status, proto):
     )
     if extra:
         if status == 200:
-            result.stdout.fnmatch_lines(['success'])
+            result.stdout.fnmatch_lines(['success !'])
         else:
             result.stderr.fnmatch_lines(['*HTTP Error 404*'])
 
@@ -69,12 +69,20 @@ def test_any(testdir, extra):
     uds.listen(1)
     result = testdir.run(
         'holdup',
+        '-v',
         '-t', '0.5',
         'tcp://localhost:%s/,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock' % port,
         *extra
     )
     if extra:
-        result.stdout.fnmatch_lines(['success'])
+        result.stdout.fnmatch_lines([
+            'holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: '
+            'any(tcp://localhost:*,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
+            'holdup: Passed check: path:///tmp/holdup-test',
+            'holdup: Passed check: any(tcp://localhost:40867,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
+            'holdup: Executing: python -c print("success !")',
+            'success !'
+        ])
     assert result.ret == 0
 
 
@@ -97,7 +105,7 @@ def test_any_same_proto(testdir, extra):
         *extra
     )
     if extra:
-        result.stdout.fnmatch_lines(['success'])
+        result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0
     t.join()
 
@@ -113,7 +121,7 @@ def test_any_failed(testdir):
         'tcp://localhost:%s/,path:///doesnt/exist,unix:///doesnt/exist' % port,
     )
     result.stderr.fnmatch_lines([
-        'Failed service checks: any(tcp://localhost:%s,path:///doesnt/exist,unix:///doesnt/exist) '
+        'holdup: Failed service checks: any(tcp://localhost:%s,path:///doesnt/exist,unix:///doesnt/exist) '
         '(Nothing succeeded: '
         'tcp://localhost:%s ([[]Errno 111[]]*), '
         'path:///doesnt/exist ([[]Errno 2[]]*), '
@@ -133,7 +141,7 @@ def test_no_abort(testdir, extra):
         *extra
     )
     result.stderr.fnmatch_lines([
-        'Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), '
+        'holdup: Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), '
         'path:///doesnt/exist ([[]Errno 2[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'
     ])
 
@@ -148,7 +156,7 @@ def test_not_readable(testdir, extra):
         'path://%s' % foobar,
         *extra
     )
-    result.stderr.fnmatch_lines(["Failed checks: path://%s (Failed access('%s', 'R_OK') test.)" % (foobar, foobar)])
+    result.stderr.fnmatch_lines(["holdup: Failed checks: path://%s (Failed access('%s', 'R_OK') test.)" % (foobar, foobar)])
 
 
 def test_bad_timeout(testdir):
@@ -194,7 +202,7 @@ def test_eval_bad_pg(testdir):
         'eval://psycopg2.connect("dbname=foo host=0.0.0.0")'
     )
     result.stderr.fnmatch_lines([
-        'Failed service checks: eval://psycopg2.connect* (*'
+        'holdup: Failed service checks: eval://psycopg2.connect* (*'
     ])
 
 
@@ -205,7 +213,7 @@ def test_eval_falsey(testdir):
         'eval://None'
     )
     result.stderr.fnmatch_lines([
-        "Failed service checks: eval://None (Failed to evaluate 'None'. Result None is falsey.). Aborting!"
+        "holdup: Failed service checks: eval://None (Failed to evaluate 'None'. Result None is falsey.). Aborting!"
     ])
     assert result.ret == 1
 
@@ -217,7 +225,7 @@ def test_eval_distutils(testdir, extra):
         *extra
     )
     if extra:
-        result.stdout.fnmatch_lines(['success'])
+        result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0
 
 
@@ -228,7 +236,7 @@ def test_eval_comma(testdir, extra):
         *extra
     )
     if extra:
-        result.stdout.fnmatch_lines(['success'])
+        result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0
 
 
@@ -239,5 +247,5 @@ def test_eval_comma_anycheck(testdir, extra):
         *extra
     )
     if extra:
-        result.stdout.fnmatch_lines(['success'])
+        result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0

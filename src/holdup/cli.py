@@ -19,12 +19,18 @@ from __future__ import print_function
 import argparse
 import ast
 import os
+import shlex
 import socket
 import ssl
 import sys
 from contextlib import closing
 from time import sleep
 from time import time
+
+try:
+    from pipes import quote
+except ImportError:
+    from shlex import quote
 
 try:
     import builtins
@@ -45,12 +51,14 @@ except ImportError:
 class Check(object):
     error = None
 
-    def is_passing(self, timeout):
+    def is_passing(self, timeout, verbose):
         try:
-            self.run(timeout)
+            self.run(timeout, verbose)
         except Exception as exc:
             self.error = exc
         else:
+            if verbose:
+                print('holdup: Passed check: %r' % self)
             return True
 
     def __repr__(self):
@@ -65,7 +73,7 @@ class TcpCheck(Check):
         self.host = host
         self.port = port
 
-    def run(self, timeout):
+    def run(self, timeout, _):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
         with closing(sock):
@@ -79,7 +87,7 @@ class HttpCheck(Check):
     def __init__(self, url):
         self.url = url
 
-    def run(self, timeout):
+    def run(self, timeout, _):
         if hasattr(ssl, 'create_default_context') and 'context' in getargspec(urlopen).args:
             kwargs = {'context': ssl.create_default_context()}
         else:
@@ -97,7 +105,7 @@ class UnixCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def run(self, timeout):
+    def run(self, timeout, _verbose):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(timeout)
         with closing(sock):
@@ -111,7 +119,7 @@ class PathCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def run(self, _):
+    def run(self, _timeout, _verbose):
         os.stat(self.path)
         if not os.access(self.path, os.R_OK):
             raise Exception("Failed access(%r, 'R_OK') test." % self.path)
@@ -139,7 +147,7 @@ class EvalCheck(Check):
                         raise argparse.ArgumentTypeError('Invalid service spec %r. Import error: %s' % (expr, exc))
                     self.ns[node.id] = sys.modules[node.id]
 
-    def run(self, _):
+    def run(self, _timeout, _verbose):
         result = eval(self.expr, dict(self.ns), dict(self.ns))
         if not result:
             raise Exception("Failed to evaluate %r. Result %r is falsey." % (self.expr, result))
@@ -152,10 +160,10 @@ class AnyCheck(Check):
     def __init__(self, checks):
         self.checks = checks
 
-    def run(self, timeout):
+    def run(self, timeout, verbose):
         errors = []
         for check in self.checks:
-            if check.is_passing(timeout):
+            if check.is_passing(timeout, verbose):
                 return
             else:
                 errors.append(check)
@@ -227,6 +235,8 @@ parser.add_argument('-T', '--check-timeout', metavar='SECONDS', type=float, defa
                     help='Time to wait for a single check. Default: %(default)s')
 parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.2,
                     help='How often to check. Default: %(default)s')
+parser.add_argument('-v', '--verbose', action='store_true',
+                    help='Verbose mode. ')
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
@@ -254,18 +264,23 @@ def main():
         else:
             parser.error('--timeout value must be greater than --check-timeout value!')
     pending = list(options.service)
+    if options.verbose:
+        print('holdup: Waiting for %ss (%ss per check, %ss sleep between loops) for these services: %s' % (
+            options.timeout, options.check_timeout, options.interval, ' '.join(map(repr, pending))))
     start = time()
     at_least_once = True
     while at_least_once or pending and time() - start < options.timeout:
         lapse = time()
-        pending = [check for check in pending if not check.is_passing(options.check_timeout)]
+        pending = [check for check in pending if not check.is_passing(options.check_timeout, options.verbose)]
         sleep(max(0, options.interval - time() + lapse))
         at_least_once = False
 
     if pending:
         if options.no_abort:
-            print('Failed checks:', ', '.join(repr(check) for check in pending), file=sys.stderr)
+            print('holdup: Failed checks:', ', '.join(repr(check) for check in pending), file=sys.stderr)
         else:
-            parser.exit(1, 'Failed service checks: %s. Aborting!\n' % ', '.join(repr(check) for check in pending))
+            parser.exit(1, 'holdup: Failed service checks: %s. Aborting!\n' % ', '.join(repr(check) for check in pending))
     if command:
+        if options.verbose:
+            print('holdup: Executing: %s' % ' '.join(map(quote, command)))
         os.execvp(command[0], command)
