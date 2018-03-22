@@ -19,7 +19,6 @@ from __future__ import print_function
 import argparse
 import ast
 import os
-import shlex
 import socket
 import ssl
 import sys
