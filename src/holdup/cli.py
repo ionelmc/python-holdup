@@ -221,7 +221,7 @@ parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                          '"any that pass".')
 parser.add_argument('command', nargs=argparse.OPTIONAL,
                     help='An optional command to exec.')
-parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=5.0,
+parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=60.0,
                     help='Time to wait for services to be ready. Default: %(default)s')
 parser.add_argument('-T', '--check-timeout', metavar='SECONDS', type=float, default=1.0,
                     help='Time to wait for a single check. Default: %(default)s')
