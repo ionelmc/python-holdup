@@ -47,6 +47,7 @@ def test_http(testdir, extra, status, proto):
     result = testdir.run(
         'holdup',
         '-T', '5',
+        '-t', '5.1',
         '%s://httpbin.org/status/%s' % (proto, status),
         *extra
     )
@@ -123,9 +124,9 @@ def test_any_failed(testdir):
     result.stderr.fnmatch_lines([
         'holdup: Failed service checks: any(tcp://localhost:%s,path:///doesnt/exist,unix:///doesnt/exist) '
         '(Nothing succeeded: '
-        'tcp://localhost:%s ([[]Errno 111[]]*), '
-        'path:///doesnt/exist ([[]Errno 2[]]*), '
-        'unix:///doesnt/exist ([[]Errno 2[]]*). Aborting!' % (port, port)
+        'tcp://localhost:%s (*), '
+        'path:///doesnt/exist (*), '
+        'unix:///doesnt/exist (*). Aborting!' % (port, port)
     ])
 
 
@@ -141,8 +142,8 @@ def test_no_abort(testdir, extra):
         *extra
     )
     result.stderr.fnmatch_lines([
-        'holdup: Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), '
-        'path:///doesnt/exist ([[]Errno 2[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'
+        'holdup: Failed checks: tcp://localhost:0 (*), '
+        'path:///doesnt/exist (*), unix:///doesnt/exist (*)'
     ])
 
 
