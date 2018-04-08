@@ -1,7 +1,7 @@
 import os
 import socket
-import threading
 import sys
+import threading
 
 import pytest
 
@@ -174,6 +174,7 @@ def test_no_abort(testdir, extra):
     ])
 
 
+@pytest.mark.skipif(os.path.exists('/.dockerenv'),reason="chmod(0) does not work in docker")
 def test_not_readable(testdir, extra):
     foobar = testdir.maketxtfile(foobar='')
     foobar.chmod(0)
@@ -184,7 +185,7 @@ def test_not_readable(testdir, extra):
         'path://%s' % foobar,
         *extra
     )
-    result.stderr.fnmatch_lines(['holdup: Failed checks: path://*'])
+    result.stderr.fnmatch_lines(["holdup: Failed checks: path://%s (Failed access('%s', 'R_OK') test.)" % (foobar, foobar)])
 
 
 def test_bad_timeout(testdir):
