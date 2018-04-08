@@ -1,11 +1,27 @@
 import os
 import socket
 import threading
+import sys
 
 import pytest
 
 pytest_plugins = 'pytester',
 
+def skip_http_insecure_test():
+    if sys.version_info[0] == 2 \
+            and sys.version_info[1] == 7 \
+            and sys.version_info[2] >= 9:
+        return False
+    elif sys.version_info[0] == 3:
+        if sys.version_info[1] == 4 \
+                and sys.version_info[2] >= 3:
+            return False
+        elif sys.version_info[1] > 4:
+            return False
+        else:
+            return True
+    else:
+        return True
 
 @pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success !")']])
 def extra(request):
@@ -56,6 +72,17 @@ def test_http(testdir, extra, status, proto):
             result.stdout.fnmatch_lines(['success !'])
         else:
             result.stderr.fnmatch_lines(['*HTTP Error 404*'])
+
+
+@pytest.mark.skipif(skip_http_insecure_test(),reason="requires ssl.create_default_context")
+def test_http_insecure(testdir):
+    result = testdir.run(
+        'holdup',
+        '-t', '2',
+        '--insecure',
+        'https://self-signed.badssl.com/',
+    )
+    assert result.ret == 0
 
 
 def test_any(testdir, extra):
