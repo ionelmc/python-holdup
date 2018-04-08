@@ -184,7 +184,7 @@ def test_not_readable(testdir, extra):
         'path://%s' % foobar,
         *extra
     )
-    result.stderr.fnmatch_lines(["holdup: Failed checks: path://%s (Failed access('%s', 'R_OK') test.)" % (foobar, foobar)])
+    result.stderr.fnmatch_lines(['holdup: Failed checks: path://*'])
 
 
 def test_bad_timeout(testdir):
