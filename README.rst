@@ -38,9 +38,9 @@ Overview
     :alt: PyPI Package latest release
     :target: https://pypi.python.org/pypi/holdup
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v1.5.0.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v1.6.0.svg
     :alt: Commits since latest release
-    :target: https://github.com/ionelmc/python-holdup/compare/v1.5.0...master
+    :target: https://github.com/ionelmc/python-holdup/compare/v1.6.0...master
 
 .. |wheel| image:: https://img.shields.io/pypi/wheel/holdup.svg
     :alt: PyPI Wheel
@@ -101,6 +101,26 @@ Optional arguments:
   -n, --no-abort        Ignore failed services. This makes `holdup` return 0
                         exit code regardless of services actually responding.
 
+Suggested use
+-------------
+
+Assuming you always want the container to wait add this in your ``Dockerfile``::
+
+    COPY entrypoint.sh /
+    ENTRYPOINT ["/entrypoint.sh"]
+    CMD ["/bin/bash"] 
+    
+Then in ``entrypoint.sh`` you could have::
+
+    #!/bin/sh
+    set -eux
+    urlstrip() { string=${@##*://}; echo ${string%%[\?/]*}; }
+    exec holdup \
+         "tcp://$DJANGO_DATABASE_HOST:$DJANGO_DATABASE_PORT" \
+         "tcp://$(urlstrip $CELERY_RESULT_BACKEND)" \
+         -- "$@"
+
+The only disadvantage is that you might occasionally need to use ``docker run --entrypoint=''`` to avoid running holdup. No biggie.
 
 Development
 ===========

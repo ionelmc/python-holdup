@@ -27,6 +27,11 @@ from time import sleep
 from time import time
 
 try:
+    from pipes import quote
+except ImportError:
+    from shlex import quote
+
+try:
     import builtins
 except ImportError:
     import __builtin__ as builtins
@@ -51,6 +56,8 @@ class Check(object):
         except Exception as exc:
             self.error = exc
         else:
+            if options.verbose:
+                print('holdup: Passed check: %r' % self)
             return True
 
     def __repr__(self):
@@ -221,12 +228,14 @@ parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                          '"any that pass".')
 parser.add_argument('command', nargs=argparse.OPTIONAL,
                     help='An optional command to exec.')
-parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=5.0,
+parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=60.0,
                     help='Time to wait for services to be ready. Default: %(default)s')
 parser.add_argument('-T', '--check-timeout', metavar='SECONDS', type=float, default=1.0,
                     help='Time to wait for a single check. Default: %(default)s')
 parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.2,
                     help='How often to check. Default: %(default)s')
+parser.add_argument('-v', '--verbose', action='store_true',
+                    help='Verbose mode. ')
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
@@ -255,6 +264,9 @@ def main():
         else:
             parser.error('--timeout value must be greater than --check-timeout value!')
     pending = list(options.service)
+    if options.verbose:
+        print('holdup: Waiting for %ss (%ss per check, %ss sleep between loops) for these services: %s' % (
+            options.timeout, options.check_timeout, options.interval, ' '.join(map(repr, pending))))
     start = time()
     at_least_once = True
     while at_least_once or pending and time() - start < options.timeout:
@@ -265,8 +277,10 @@ def main():
 
     if pending:
         if options.no_abort:
-            print('Failed checks:', ', '.join(repr(check) for check in pending), file=sys.stderr)
+            print('holdup: Failed checks:', ', '.join(repr(check) for check in pending), file=sys.stderr)
         else:
-            parser.exit(1, 'Failed service checks: %s. Aborting!\n' % ', '.join(repr(check) for check in pending))
+            parser.exit(1, 'holdup: Failed service checks: %s. Aborting!\n' % ', '.join(repr(check) for check in pending))
     if command:
+        if options.verbose:
+            print('holdup: Executing: %s' % ' '.join(map(quote, command)))
         os.execvp(command[0], command)
