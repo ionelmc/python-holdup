@@ -37,11 +37,6 @@ except ImportError:
     import __builtin__ as builtins
 
 try:
-    from inspect import getfullargspec as getargspec
-except ImportError:
-    from inspect import getargspec
-
-try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
@@ -86,9 +81,33 @@ class HttpCheck(Check):
     def __init__(self, url):
         self.url = url
 
+    def can_create_default_context(self):
+        """
+            Check if the current python version supports
+                * ssl.create_default_context()
+                * 'context' kwargs for urlopen
+            Supported Python versions are:
+                * >2.7.9
+                * >3.4.3
+        """
+        if sys.version_info[0] == 2 \
+                and sys.version_info[1] == 7 \
+                and sys.version_info[2] >= 9:
+            return True
+        elif sys.version_info[0] == 3:
+            if sys.version_info[1] == 4 \
+                    and sys.version_info[2] >= 3:
+                return True
+            elif sys.version_info[1] > 4:
+                return True
+            else:
+                return False
+        else:
+            return False
+
     def run(self, options):
         kwargs = {}
-        if hasattr(ssl, 'create_default_context') and 'context' in getargspec(urlopen).args:
+        if self.can_create_default_context():
             ssl_ctx = ssl.create_default_context()
             if options.insecure:
                 ssl_ctx.check_hostname = False
