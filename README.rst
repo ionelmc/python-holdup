@@ -72,7 +72,7 @@ Installation
 Documentation
 =============
 
-Usage: ``holdup [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]``
+Usage: ``holdup [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] [-k] service [service ...] [-- command [arg [arg ...]]]``
 
 Wait for services to be ready and optionally exec command.
 
@@ -100,6 +100,7 @@ Optional arguments:
                         How often to check. Default: 0.2
   -n, --no-abort        Ignore failed services. This makes `holdup` return 0
                         exit code regardless of services actually responding.
+  -k, --insecure        Skip SSL Certificate verification for HTTPS services
 
 Suggested use
 -------------
@@ -108,8 +109,8 @@ Assuming you always want the container to wait add this in your ``Dockerfile``::
 
     COPY entrypoint.sh /
     ENTRYPOINT ["/entrypoint.sh"]
-    CMD ["/bin/bash"] 
-    
+    CMD ["/bin/bash"]
+
 Then in ``entrypoint.sh`` you could have::
 
     #!/bin/sh
