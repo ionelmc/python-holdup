@@ -87,11 +87,17 @@ class HttpCheck(Check):
         self.url = url
 
     def run(self, options):
-        ssl_ctx = ssl.create_default_context()
-        if options.insecure:
-            ssl_ctx.check_hostname = False
-            ssl_ctx.verify_mode = ssl.CERT_NONE
-        with closing(urlopen(self.url, timeout=options.check_timeout, context=ssl_ctx)) as req:
+        kwargs = {}
+        if hasattr(ssl, 'create_default_context') and 'context' in getargspec(urlopen).args:
+            ssl_ctx = ssl.create_default_context()
+            if options.insecure:
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+            kwargs = {'context': ssl_ctx}
+        else:
+            if options.insecure:
+                raise Exception("--insecure is not supported with the current version of python")
+        with closing(urlopen(self.url, timeout=options.check_timeout, **kwargs)) as req:
             status = req.getcode()
             if status != 200:
                 raise Exception("Expected status code 200, got: %r." % status)
