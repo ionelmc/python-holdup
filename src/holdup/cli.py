@@ -79,7 +79,12 @@ class TcpCheck(Check):
 
 class HttpCheck(Check):
     def __init__(self, url):
-        self.url = url
+        self.do_insecure = False
+        proto, urn = url.split('://', 1)
+        if proto == 'https+insecure':
+            self.do_insecure = True
+            proto = 'https'
+        self.url = '{}://{}'.format(proto, urn)
 
     def can_create_default_context(self):
         """
@@ -107,15 +112,18 @@ class HttpCheck(Check):
 
     def run(self, options):
         kwargs = {}
+        do_insecure = self.do_insecure
+        if options.insecure:
+            do_insecure = True
         if self.can_create_default_context():
             ssl_ctx = ssl.create_default_context()
-            if options.insecure:
+            if do_insecure:
                 ssl_ctx.check_hostname = False
                 ssl_ctx.verify_mode = ssl.CERT_NONE
             kwargs = {'context': ssl_ctx}
         else:
-            if options.insecure:
-                raise Exception("--insecure is not supported with the current version of python")
+            if do_insecure:
+                raise Exception("Insecure HTTPS is not supported with the current version of python")
         with closing(urlopen(self.url, timeout=options.check_timeout, **kwargs)) as req:
             status = req.getcode()
             if status != 200:
@@ -231,7 +239,7 @@ def parse_value(value, proto):
         return UnixCheck(value)
     elif proto == 'path':
         return PathCheck(value)
-    elif proto in ('http', 'https'):
+    elif proto in ('http', 'https', 'https+insecure'):
         return HttpCheck('%s://%s' % (proto, value))
     elif proto == 'eval':
         return EvalCheck(value)
@@ -247,7 +255,7 @@ parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                     help='A service to wait for. '
                          'Supported protocols: "tcp://host:port/", "path:///path/to/something", '
                          '"unix:///path/to/domain.sock", "eval://expr", '
-                         '"http://urn", "http://urn" (status 200 expected). '
+                         '"http://urn", "http://urn", "https+insecure//urn" (status 200 expected). '
                          'Join protocols with a comma to make holdup exit at the first '
                          'passing one, eg: tcp://host:1,host:2 or tcp://host:1,tcp://host:2 are equivalent and mean '
                          '"any that pass".')
@@ -264,7 +272,7 @@ parser.add_argument('-v', '--verbose', action='store_true',
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
-parser.add_argument('-k', '--insecure', action='store_true',
+parser.add_argument('--insecure', action='store_true',
                     help='Disable SSL Certificate verification')
 
 

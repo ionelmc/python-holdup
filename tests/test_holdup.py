@@ -75,12 +75,22 @@ def test_http(testdir, extra, status, proto):
 
 
 @pytest.mark.skipif(skip_http_insecure_test(),reason="requires ssl.create_default_context")
-def test_http_insecure(testdir):
+def test_http_insecure_with_option(testdir):
     result = testdir.run(
         'holdup',
         '-t', '2',
         '--insecure',
         'https://self-signed.badssl.com/',
+    )
+    assert result.ret == 0
+
+
+@pytest.mark.skipif(skip_http_insecure_test(),reason="requires ssl.create_default_context")
+def test_http_insecure_with_proto(testdir):
+    result = testdir.run(
+        'holdup',
+        '-t', '2',
+        'https+insecure://self-signed.badssl.com/',
     )
     assert result.ret == 0
 

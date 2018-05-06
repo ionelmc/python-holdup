@@ -81,7 +81,7 @@ Positional arguments:
     A service to wait for. Supported protocols:
     "tcp://host:port/", "path:///path/to/something",
     "unix:///path/to/domain.sock", "eval://expr",
-    "http://urn", "http://urn" (status 200 expected). Join
+    "http://urn", "http://urn", "https+insecure//urn" (status 200 expected). Join
     protocols with a comma to make holdup exit at the
     first passing one, eg: tcp://host:1,host:2 or
     tcp://host:1,tcp://host:2 are equivalent and mean "any
@@ -100,7 +100,8 @@ Optional arguments:
                         How often to check. Default: 0.2
   -n, --no-abort        Ignore failed services. This makes `holdup` return 0
                         exit code regardless of services actually responding.
-  -k, --insecure        Skip SSL Certificate verification for HTTPS services
+  --insecure            Skip SSL Certificate verification for HTTPS services.
+                        This is identical to providing 'https+insecure//urn'
 
 Suggested use
 -------------
