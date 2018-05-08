@@ -273,7 +273,7 @@ parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
 parser.add_argument('--insecure', action='store_true',
-                    help='Disable SSL Certificate verification')
+                    help='Disable SSL Certificate verification for HTTPS services')
 
 
 def main():

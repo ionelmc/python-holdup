@@ -72,7 +72,7 @@ Installation
 Documentation
 =============
 
-Usage: ``holdup [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] [-k] service [service ...] [-- command [arg [arg ...]]]``
+Usage: ``holdup [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] [--insecure] service [service ...] [-- command [arg [arg ...]]]``
 
 Wait for services to be ready and optionally exec command.
 
@@ -101,7 +101,6 @@ Optional arguments:
   -n, --no-abort        Ignore failed services. This makes `holdup` return 0
                         exit code regardless of services actually responding.
   --insecure            Skip SSL Certificate verification for HTTPS services.
-                        This is identical to providing 'https+insecure//urn'
 
 Suggested use
 -------------
@@ -123,6 +122,19 @@ Then in ``entrypoint.sh`` you could have::
          -- "$@"
 
 The only disadvantage is that you might occasionally need to use ``docker run --entrypoint=''`` to avoid running holdup. No biggie.
+
+Insecure HTTPS Service Checks
+-------------------------------
+
+You may choose to skip SSL validation when waiting for an HTTPS service (for e.g., when using an IP Address). This can be done using either of the following methods::
+
+    # Specifying a https+insecure protocol
+    holdup https+insecure://10.1.2.3/
+
+    # Specifying the --insecure` option
+    holdup --insecure https://10.1.2.3/
+
+Skipping SSL Certificate verification requires a minimum of Python-2.7.9 or Python-3.4.3.
 
 Development
 ===========
