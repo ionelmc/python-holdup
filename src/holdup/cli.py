@@ -37,6 +37,11 @@ except ImportError:
     import __builtin__ as builtins
 
 try:
+    from inspect import getfullargspec as getargspec
+except ImportError:
+    from inspect import getargspec
+
+try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
@@ -95,15 +100,12 @@ class HttpCheck(Check):
                 * >2.7.9
                 * >3.4.3
         """
-        if sys.version_info[0] == 2 \
-                and sys.version_info[1] == 7 \
-                and sys.version_info[2] >= 9:
-            return True
-        elif sys.version_info[0] == 3:
-            if sys.version_info[1] == 4 \
-                    and sys.version_info[2] >= 3:
-                return True
-            elif sys.version_info[1] > 4:
+        if hasattr(ssl, 'create_default_context'):
+            urlopen_argspec = getargspec(urlopen)
+            urlopen_args = urlopen_argspec.args
+            if hasattr(urlopen_argspec, 'kwonlyargs'):
+                urlopen_args.extend(urlopen_argspec.kwonlyargs)
+            if 'context' in urlopen_args:
                 return True
             else:
                 return False

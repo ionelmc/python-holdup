@@ -8,15 +8,12 @@ import pytest
 pytest_plugins = 'pytester',
 
 def skip_http_insecure_test():
-    if sys.version_info[0] == 2 \
-            and sys.version_info[1] == 7 \
-            and sys.version_info[2] >= 9:
-        return False
-    elif sys.version_info[0] == 3:
-        if sys.version_info[1] == 4 \
-                and sys.version_info[2] >= 3:
-            return False
-        elif sys.version_info[1] > 4:
+    if hasattr(ssl, 'create_default_context'):
+        urlopen_argspec = getargspec(urlopen)
+        urlopen_args = urlopen_argspec.args
+        if hasattr(urlopen_argspec, 'kwonlyargs'):
+            urlopen_args.extend(urlopen_argspec.kwonlyargs)
+        if 'context' in urlopen_args:
             return False
         else:
             return True
