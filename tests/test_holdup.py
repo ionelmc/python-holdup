@@ -1,9 +1,20 @@
 import os
 import socket
+import ssl
 import sys
 import threading
 
 import pytest
+
+try:
+    from inspect import getfullargspec as getargspec
+except ImportError:
+    from inspect import getargspec
+
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 pytest_plugins = 'pytester',
 
