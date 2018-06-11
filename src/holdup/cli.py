@@ -50,13 +50,13 @@ except ImportError:
 class Check(object):
     error = None
 
-    def is_passing(self, timeout, verbose):
+    def is_passing(self, options):
         try:
-            self.run(timeout, verbose)
+            self.run(options)
         except Exception as exc:
             self.error = exc
         else:
-            if verbose:
+            if options.verbose:
                 print('holdup: Passed check: %r' % self)
             return True
 
@@ -72,9 +72,9 @@ class TcpCheck(Check):
         self.host = host
         self.port = port
 
-    def run(self, timeout, _):
+    def run(self, options):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
+        sock.settimeout(options.check_timeout)
         with closing(sock):
             sock.connect((self.host, self.port))
 
@@ -84,14 +84,49 @@ class TcpCheck(Check):
 
 class HttpCheck(Check):
     def __init__(self, url):
-        self.url = url
+        self.do_insecure = False
+        proto, urn = url.split('://', 1)
+        if proto == 'https+insecure':
+            self.do_insecure = True
+            proto = 'https'
+        self.url = '{}://{}'.format(proto, urn)
 
-    def run(self, timeout, _):
-        if hasattr(ssl, 'create_default_context') and 'context' in getargspec(urlopen).args:
-            kwargs = {'context': ssl.create_default_context()}
+    def can_create_default_context(self):
+        """
+            Check if the current python version supports
+                * ssl.create_default_context()
+                * 'context' kwargs for urlopen
+            Supported Python versions are:
+                * >2.7.9
+                * >3.4.3
+        """
+        if hasattr(ssl, 'create_default_context'):
+            urlopen_argspec = getargspec(urlopen)
+            urlopen_args = urlopen_argspec.args
+            if hasattr(urlopen_argspec, 'kwonlyargs'):
+                urlopen_args.extend(urlopen_argspec.kwonlyargs)
+            if 'context' in urlopen_args:
+                return True
+            else:
+                return False
         else:
-            kwargs = {}
-        with closing(urlopen(self.url, timeout=timeout, **kwargs)) as req:
+            return False
+
+    def run(self, options):
+        kwargs = {}
+        do_insecure = self.do_insecure
+        if options.insecure:
+            do_insecure = True
+        if self.can_create_default_context():
+            ssl_ctx = ssl.create_default_context()
+            if do_insecure:
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+            kwargs = {'context': ssl_ctx}
+        else:
+            if do_insecure:
+                raise Exception("Insecure HTTPS is not supported with the current version of python")
+        with closing(urlopen(self.url, timeout=options.check_timeout, **kwargs)) as req:
             status = req.getcode()
             if status != 200:
                 raise Exception("Expected status code 200, got: %r." % status)
@@ -104,9 +139,9 @@ class UnixCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def run(self, timeout, _verbose):
+    def run(self, options):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
+        sock.settimeout(options.check_timeout)
         with closing(sock):
             sock.connect(self.path)
 
@@ -118,7 +153,7 @@ class PathCheck(Check):
     def __init__(self, path):
         self.path = path
 
-    def run(self, _timeout, _verbose):
+    def run(self, _):
         os.stat(self.path)
         if not os.access(self.path, os.R_OK):
             raise Exception("Failed access(%r, 'R_OK') test." % self.path)
@@ -146,7 +181,7 @@ class EvalCheck(Check):
                         raise argparse.ArgumentTypeError('Invalid service spec %r. Import error: %s' % (expr, exc))
                     self.ns[node.id] = sys.modules[node.id]
 
-    def run(self, _timeout, _verbose):
+    def run(self, _):
         result = eval(self.expr, dict(self.ns), dict(self.ns))
         if not result:
             raise Exception("Failed to evaluate %r. Result %r is falsey." % (self.expr, result))
@@ -159,10 +194,10 @@ class AnyCheck(Check):
     def __init__(self, checks):
         self.checks = checks
 
-    def run(self, timeout, verbose):
+    def run(self, options):
         errors = []
         for check in self.checks:
-            if check.is_passing(timeout, verbose):
+            if check.is_passing(options):
                 return
             else:
                 errors.append(check)
@@ -206,7 +241,7 @@ def parse_value(value, proto):
         return UnixCheck(value)
     elif proto == 'path':
         return PathCheck(value)
-    elif proto in ('http', 'https'):
+    elif proto in ('http', 'https', 'https+insecure'):
         return HttpCheck('%s://%s' % (proto, value))
     elif proto == 'eval':
         return EvalCheck(value)
@@ -222,7 +257,7 @@ parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                     help='A service to wait for. '
                          'Supported protocols: "tcp://host:port/", "path:///path/to/something", '
                          '"unix:///path/to/domain.sock", "eval://expr", '
-                         '"http://urn", "http://urn" (status 200 expected). '
+                         '"http://urn", "http://urn", "https+insecure//urn" (status 200 expected). '
                          'Join protocols with a comma to make holdup exit at the first '
                          'passing one, eg: tcp://host:1,host:2 or tcp://host:1,tcp://host:2 are equivalent and mean '
                          '"any that pass".')
@@ -239,6 +274,8 @@ parser.add_argument('-v', '--verbose', action='store_true',
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
+parser.add_argument('--insecure', action='store_true',
+                    help='Disable SSL Certificate verification for HTTPS services')
 
 
 def main():
@@ -270,7 +307,7 @@ def main():
     at_least_once = True
     while at_least_once or pending and time() - start < options.timeout:
         lapse = time()
-        pending = [check for check in pending if not check.is_passing(options.check_timeout, options.verbose)]
+        pending = [check for check in pending if not check.is_passing(options)]
         sleep(max(0, options.interval - time() + lapse))
         at_least_once = False
 

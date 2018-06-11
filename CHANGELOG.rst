@@ -2,6 +2,10 @@
 Changelog
 =========
 
+1.7.0 ()
+------------------
+
+* Added support for skipping SSL certificate verification for HTTPS services
 
 1.6.0 (2018-03-22)
 ------------------

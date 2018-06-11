@@ -1,11 +1,35 @@
 import os
 import socket
+import ssl
+import sys
 import threading
 
 import pytest
 
+try:
+    from inspect import getfullargspec as getargspec
+except ImportError:
+    from inspect import getargspec
+
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
+
 pytest_plugins = 'pytester',
 
+def skip_http_insecure_test():
+    if hasattr(ssl, 'create_default_context'):
+        urlopen_argspec = getargspec(urlopen)
+        urlopen_args = urlopen_argspec.args
+        if hasattr(urlopen_argspec, 'kwonlyargs'):
+            urlopen_args.extend(urlopen_argspec.kwonlyargs)
+        if 'context' in urlopen_args:
+            return False
+        else:
+            return True
+    else:
+        return True
 
 @pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success !")']])
 def extra(request):
@@ -47,6 +71,7 @@ def test_http(testdir, extra, status, proto):
     result = testdir.run(
         'holdup',
         '-T', '5',
+        '-t', '5.1',
         '%s://httpbin.org/status/%s' % (proto, status),
         *extra
     )
@@ -55,6 +80,27 @@ def test_http(testdir, extra, status, proto):
             result.stdout.fnmatch_lines(['success !'])
         else:
             result.stderr.fnmatch_lines(['*HTTP Error 404*'])
+
+
+@pytest.mark.skipif(skip_http_insecure_test(),reason="requires ssl.create_default_context")
+def test_http_insecure_with_option(testdir):
+    result = testdir.run(
+        'holdup',
+        '-t', '2',
+        '--insecure',
+        'https://self-signed.badssl.com/',
+    )
+    assert result.ret == 0
+
+
+@pytest.mark.skipif(skip_http_insecure_test(),reason="requires ssl.create_default_context")
+def test_http_insecure_with_proto(testdir):
+    result = testdir.run(
+        'holdup',
+        '-t', '2',
+        'https+insecure://self-signed.badssl.com/',
+    )
+    assert result.ret == 0
 
 
 def test_any(testdir, extra):
@@ -123,9 +169,9 @@ def test_any_failed(testdir):
     result.stderr.fnmatch_lines([
         'holdup: Failed service checks: any(tcp://localhost:%s,path:///doesnt/exist,unix:///doesnt/exist) '
         '(Nothing succeeded: '
-        'tcp://localhost:%s ([[]Errno 111[]]*), '
-        'path:///doesnt/exist ([[]Errno 2[]]*), '
-        'unix:///doesnt/exist ([[]Errno 2[]]*). Aborting!' % (port, port)
+        'tcp://localhost:%s (*), '
+        'path:///doesnt/exist (*), '
+        'unix:///doesnt/exist (*). Aborting!' % (port, port)
     ])
 
 
@@ -141,11 +187,12 @@ def test_no_abort(testdir, extra):
         *extra
     )
     result.stderr.fnmatch_lines([
-        'holdup: Failed checks: tcp://localhost:0 ([[]Errno 111[]]*), '
-        'path:///doesnt/exist ([[]Errno 2[]]*), unix:///doesnt/exist ([[]Errno 2[]]*)'
+        'holdup: Failed checks: tcp://localhost:0 (*), '
+        'path:///doesnt/exist (*), unix:///doesnt/exist (*)'
     ])
 
 
+@pytest.mark.skipif(os.path.exists('/.dockerenv'),reason="chmod(0) does not work in docker")
 def test_not_readable(testdir, extra):
     foobar = testdir.maketxtfile(foobar='')
     foobar.chmod(0)

@@ -72,7 +72,7 @@ Installation
 Documentation
 =============
 
-Usage: ``holdup [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]``
+Usage: ``holdup [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] [--insecure] service [service ...] [-- command [arg [arg ...]]]``
 
 Wait for services to be ready and optionally exec command.
 
@@ -81,7 +81,7 @@ Positional arguments:
     A service to wait for. Supported protocols:
     "tcp://host:port/", "path:///path/to/something",
     "unix:///path/to/domain.sock", "eval://expr",
-    "http://urn", "http://urn" (status 200 expected). Join
+    "http://urn", "http://urn", "https+insecure//urn" (status 200 expected). Join
     protocols with a comma to make holdup exit at the
     first passing one, eg: tcp://host:1,host:2 or
     tcp://host:1,tcp://host:2 are equivalent and mean "any
@@ -100,6 +100,7 @@ Optional arguments:
                         How often to check. Default: 0.2
   -n, --no-abort        Ignore failed services. This makes `holdup` return 0
                         exit code regardless of services actually responding.
+  --insecure            Skip SSL Certificate verification for HTTPS services.
 
 Suggested use
 -------------
@@ -108,8 +109,8 @@ Assuming you always want the container to wait add this in your ``Dockerfile``::
 
     COPY entrypoint.sh /
     ENTRYPOINT ["/entrypoint.sh"]
-    CMD ["/bin/bash"] 
-    
+    CMD ["/bin/bash"]
+
 Then in ``entrypoint.sh`` you could have::
 
     #!/bin/sh
@@ -121,6 +122,19 @@ Then in ``entrypoint.sh`` you could have::
          -- "$@"
 
 The only disadvantage is that you might occasionally need to use ``docker run --entrypoint=''`` to avoid running holdup. No biggie.
+
+Insecure HTTPS Service Checks
+-------------------------------
+
+You may choose to skip SSL validation when waiting for an HTTPS service (for e.g., when using an IP Address). This can be done using either of the following methods::
+
+    # Specifying a https+insecure protocol
+    holdup https+insecure://10.1.2.3/
+
+    # Specifying the --insecure` option
+    holdup --insecure https://10.1.2.3/
+
+Skipping SSL Certificate verification requires a minimum of Python-2.7.9 or Python-3.4.3.
 
 Development
 ===========
