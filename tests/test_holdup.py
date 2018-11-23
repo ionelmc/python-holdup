@@ -1,7 +1,6 @@
 import os
 import socket
 import ssl
-import sys
 import threading
 
 import pytest
@@ -18,7 +17,8 @@ except ImportError:
 
 pytest_plugins = 'pytester',
 
-def skip_http_insecure_test():
+
+def urlopen_has_ssl_context():
     if hasattr(ssl, 'create_default_context'):
         urlopen_argspec = getargspec(urlopen)
         urlopen_args = urlopen_argspec.args
@@ -30,6 +30,7 @@ def skip_http_insecure_test():
             return True
     else:
         return True
+
 
 @pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success !")']])
 def extra(request):
@@ -82,7 +83,7 @@ def test_http(testdir, extra, status, proto):
             result.stderr.fnmatch_lines(['*HTTP Error 404*'])
 
 
-@pytest.mark.skipif(skip_http_insecure_test(),reason="requires ssl.create_default_context")
+@pytest.mark.skipif("urlopen_has_ssl_context()")
 def test_http_insecure_with_option(testdir):
     result = testdir.run(
         'holdup',
@@ -93,7 +94,7 @@ def test_http_insecure_with_option(testdir):
     assert result.ret == 0
 
 
-@pytest.mark.skipif(skip_http_insecure_test(),reason="requires ssl.create_default_context")
+@pytest.mark.skipif("urlopen_has_ssl_context()")
 def test_http_insecure_with_proto(testdir):
     result = testdir.run(
         'holdup',
@@ -192,7 +193,7 @@ def test_no_abort(testdir, extra):
     ])
 
 
-@pytest.mark.skipif(os.path.exists('/.dockerenv'),reason="chmod(0) does not work in docker")
+@pytest.mark.skipif(os.path.exists('/.dockerenv'), reason="chmod(0) does not work in docker")
 def test_not_readable(testdir, extra):
     foobar = testdir.maketxtfile(foobar='')
     foobar.chmod(0)
