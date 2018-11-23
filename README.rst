@@ -93,7 +93,7 @@ Positional arguments:
 Optional arguments:
   -h, --help            show this help message and exit
   -t SECONDS, --timeout SECONDS
-                        Time to wait for services to be ready. Default: 5.0
+                        Time to wait for services to be ready. Default: 60.0
   -T SECONDS, --check-timeout SECONDS
                         Time to wait for a single check. Default: 1.0
   -i SECONDS, --interval SECONDS
