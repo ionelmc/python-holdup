@@ -7,9 +7,11 @@ Overview
 .. list-table::
     :stub-columns: 1
 
+    * - docs
+      - |docs|
     * - tests
-      - | |travis| |appveyor| |requires|
-        | |codecov|
+      - | |travis| |requires|
+        | |coveralls| |codecov|
     * - package
       - | |version| |wheel| |supported-versions| |supported-implementations|
         | |commits-since|
@@ -18,17 +20,18 @@ Overview
     :target: https://readthedocs.org/projects/python-holdup
     :alt: Documentation Status
 
+
 .. |travis| image:: https://travis-ci.org/ionelmc/python-holdup.svg?branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.org/ionelmc/python-holdup
 
-.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/ionelmc/python-holdup?branch=master&svg=true
-    :alt: AppVeyor Build Status
-    :target: https://ci.appveyor.com/project/ionelmc/python-holdup
-
 .. |requires| image:: https://requires.io/github/ionelmc/python-holdup/requirements.svg?branch=master
     :alt: Requirements Status
     :target: https://requires.io/github/ionelmc/python-holdup/requirements/?branch=master
+
+.. |coveralls| image:: https://coveralls.io/repos/ionelmc/python-holdup/badge.svg?branch=master&service=github
+    :alt: Coverage Status
+    :target: https://coveralls.io/r/ionelmc/python-holdup
 
 .. |codecov| image:: https://codecov.io/github/ionelmc/python-holdup/coverage.svg?branch=master
     :alt: Coverage Status
@@ -60,7 +63,7 @@ Overview
 A tool to wait for services and execute command. Useful for Docker containers that depend on slow to start services
 (like almost everything).
 
-* Free software: BSD license
+* Free software: BSD 2-Clause License
 
 Installation
 ============

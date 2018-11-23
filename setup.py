@@ -16,18 +16,18 @@ from setuptools import setup
 
 
 def read(*names, **kwargs):
-    return io.open(
+    with io.open(
         join(dirname(__file__), *names),
         encoding=kwargs.get('encoding', 'utf8')
-    ).read()
+    ) as fh:
+        return fh.read()
 
 
 setup(
     name='holdup',
     version='1.6.0',
-    license='BSD',
-    description='A tool to wait for services and execute command. '
-                'Useful for Docker containers that depend on slow to start services (like almost everything).',
+    license='BSD 2-Clause License',
+    description='A tool to wait for services and execute command. Useful for Docker containers that depend on slow to start services (like almost everything).',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
         re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
@@ -51,10 +51,10 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         # uncomment if you test on these interpreters:
