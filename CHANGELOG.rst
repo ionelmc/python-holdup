@@ -2,10 +2,12 @@
 Changelog
 =========
 
-1.7.0 ()
+1.7.0 (2018-11-24)
 ------------------
 
 * Added support for skipping SSL certificate verification for HTTPS services
+  (the ``--insecure`` option and ``https+insecure`` protocol).
+  Contributed by Mithun Ayachit in `#2 <https://github.com/ionelmc/python-holdup/pull/2>`_.
 
 1.6.0 (2018-03-22)
 ------------------
