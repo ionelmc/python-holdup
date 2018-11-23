@@ -25,7 +25,7 @@ def read(*names, **kwargs):
 
 setup(
     name='holdup',
-    version='1.6.0',
+    version='1.7.0',
     license='BSD 2-Clause License',
     description='A tool to wait for services and execute command. Useful for Docker containers that depend on slow to '
                 'start services (like almost everything).',
