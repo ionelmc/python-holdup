@@ -56,11 +56,16 @@ class Check(object):
         try:
             self.run(options)
         except Exception as exc:
+            if self.is_fatal_error(exc):
+                raise exc
             self.error = exc
         else:
             if options.verbose:
                 print('holdup: Passed check: %r' % self)
             return True
+
+    def is_fatal_error(self, error):
+        return False
 
     def __repr__(self):
         if self.error:
@@ -92,14 +97,20 @@ class PgCheck(Check):
         self.password = password
         self.port = port
 
-    def run(self, timeout, _):
+    def run(self, options):
         with closing(psycopg2.connect(host=self.host, database=self.database, user=self.user, password=self.password,
-                                      port=self.port, connect_timeout=timeout)) as conn:
+                                      port=self.port, connect_timeout=options.check_timeout)) as conn:
             # create a cursor
             with closing(conn.cursor()) as cur:
                 start = time()
                 cur.execute('SELECT version()')
                 db_version = cur.fetchone()
+
+    def is_fatal_error(self, error):
+        representation = repr(error)
+        if 'password authentication failed' in representation or\
+            'database "{0}" does not exist'.format(self.database) in representation:
+            return True
 
     def __str__(self):
         return 'postgresql://{0.user}:{0.password}:{0.host}:{0.database}'.format(self)
