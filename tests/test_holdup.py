@@ -254,6 +254,15 @@ def test_eval_bad_pg(testdir):
     ])
 
 
+@pytest.mark.parametrize("proto", ['posgtgresql', 'postgres', 'pg'])
+def test_pg_unavailable(testdir, proto):
+    pytest.importorskip('psycopg2')
+    result = testdir.run(        'holdup', '-t', '0.1', proto + ':///')
+    result.stderr.fnmatch_lines([
+        'holdup: Failed service checks: eval://psycopg2.connect* (*'
+    ])
+
+
 def test_eval_falsey(testdir):
     result = testdir.run(
         'holdup',

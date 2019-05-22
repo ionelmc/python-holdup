@@ -20,15 +20,22 @@ from __future__ import print_function
 import argparse
 import ast
 import os
-import psycopg2
-from psycopg2.extensions import make_dsn
-from psycopg2 import ProgrammingError
 import socket
 import ssl
 import sys
 from contextlib import closing
 from time import sleep
 from time import time
+
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
+
+try:
+    from psycopg2.extensions import make_dsn
+except ImportError:
+    make_dsn = lambda value: value
 
 try:
     from pipes import quote
@@ -256,13 +263,17 @@ def parse_value(value, proto):
             raise argparse.ArgumentTypeError('Invalid service spec %r. Port must be a number.' % value)
         port = int(port)
         return TcpCheck(host, port)
-    elif proto in ('pg', 'postgresql', 'postgres'):
-        uri = 'postgresql://{}'.format(value)
+    elif proto in ("pg", "postgresql", "postgres"):
+        if psycopg2 is None:
+            raise argparse.ArgumentTypeError("Protocol %r unusable. Install psycopg2 or holdup[pg]" % proto)
+
+        uri = "postgresql://{}".format(value)
         try:
             connection_uri = make_dsn(uri)
-        except ProgrammingError:
-            raise ProgrammingError('Connection string "{}" postgres database is invalid, the format is'\
-                                   '"postgresql://user:password@host:port/dbname"'.format(uri))
+        except Exception as exc:
+            raise argparse.ArgumentTypeError(
+                "Failed to parse %r: %s. Must be a valid connection URI." % (display_value, exc)
+            )
         return PgCheck(connection_uri)
     elif proto == 'unix':
         return UnixCheck(value)
