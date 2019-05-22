@@ -18,11 +18,9 @@ Why does this file exist, and why not put this in __main__?
 from __future__ import print_function
 
 import argparse
+from argparse import ArgumentTypeError
 import ast
 import os
-import psycopg2
-from psycopg2.extensions import make_dsn
-from psycopg2 import ProgrammingError
 import socket
 import ssl
 import sys
@@ -50,6 +48,12 @@ try:
 except ImportError:
     from urllib2 import urlopen
 
+try:
+    import psycopg2
+    from psycopg2.extensions import make_dsn
+    psycopg2_imported = True
+except ImportError:
+    psycopg2_imported = False
 
 class Check(object):
     error = None
@@ -257,12 +261,13 @@ def parse_value(value, proto):
         port = int(port)
         return TcpCheck(host, port)
     elif proto in ('pg', 'postgresql', 'postgres'):
-        uri = 'postgresql://{}'.format(value)
+        if not psycopg2_imported:
+            raise ImportError("You need to install psycopg2 in order to use postgresql protocol")
         try:
-            connection_uri = make_dsn(uri)
-        except ProgrammingError:
-            raise ProgrammingError('Connection string "{}" postgres database is invalid, the format is'\
-                                   '"postgresql://user:password@host:port/dbname"'.format(uri))
+            connection_uri = make_dsn('postgresql://{}'.format(value))
+        except Exception as exc:
+            raise ArgumentTypeError('Failed to parse %s : %s. Expected format is'\
+                                   '"postgresql://user:password@host:port/dbname"' % (value, exc))
         return PgCheck(connection_uri)
     elif proto == 'unix':
         return UnixCheck(value)
