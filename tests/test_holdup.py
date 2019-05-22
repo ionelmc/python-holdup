@@ -83,7 +83,7 @@ def test_http(testdir, extra, status, proto):
             result.stderr.fnmatch_lines(['*HTTP Error 404*'])
 
 
-@pytest.mark.skipif("urlopen_has_ssl_context()")
+@pytest.mark.skipif('urlopen_has_ssl_context()')
 def test_http_insecure_with_option(testdir):
     result = testdir.run(
         'holdup',
@@ -94,7 +94,7 @@ def test_http_insecure_with_option(testdir):
     assert result.ret == 0
 
 
-@pytest.mark.skipif("urlopen_has_ssl_context()")
+@pytest.mark.skipif('urlopen_has_ssl_context()')
 def test_http_insecure_with_proto(testdir):
     result = testdir.run(
         'holdup',
@@ -123,12 +123,13 @@ def test_any(testdir, extra):
     )
     if extra:
         result.stdout.fnmatch_lines([
-            'holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: '
-            'any(tcp://localhost:*,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
-            'holdup: Passed check: path:///tmp/holdup-test',
-            'holdup: Passed check: any(tcp://localhost:*,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock)',
-            'holdup: Executing: python -c \'print("success !")\'',
-            'success !'
+            "holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: "
+            "any('tcp://localhost:*', 'path:///tmp/holdup-test', 'unix:///tmp/holdup-test.sock')",
+            "holdup: Passed check: 'path:///tmp/holdup-test' (PASSED)",
+            "holdup: Passed check: any('tcp://localhost:*' (*), 'path:///tmp/holdup-test' (PASSED), "
+            "'unix:///tmp/holdup-test.sock' (PENDING)) (PASSED)",
+            "holdup: Executing: python -c 'print(\"success !\")'",
+            "success !",
         ])
     assert result.ret == 0
 
@@ -165,22 +166,20 @@ def test_any_failed(testdir):
     result = testdir.run(
         'holdup',
         '-t', '0.5',
-        'tcp://localhost:%s/,path:///doesnt/exist,unix:///doesnt/exist' % port,
+        'tcp://localhost:%s/,path:///doesnt/exist,unix:///doesnt/exist' % port
     )
     result.stderr.fnmatch_lines([
-        'holdup: Failed service checks: any(tcp://localhost:%s,path:///doesnt/exist,unix:///doesnt/exist) '
-        '(Nothing succeeded: '
-        'tcp://localhost:%s (*), '
-        'path:///doesnt/exist (*), '
-        'unix:///doesnt/exist (*). Aborting!' % (port, port)
+        "holdup: Failed checks: any('tcp://localhost:%s' (*), 'path:///doesnt/exist' (*), "
+        "'unix:///doesnt/exist' (*)) (No checks passed). "
+        "Aborting!" % port,
     ])
 
 
 def test_no_abort(testdir, extra):
     result = testdir.run(
         'holdup',
-        '-t', '0.1',
-        '-n',
+        '-t',
+        '0.1', '-n',
         'tcp://localhost:0',
         'tcp://localhost:0/',
         'path:///doesnt/exist',
@@ -188,12 +187,13 @@ def test_no_abort(testdir, extra):
         *extra
     )
     result.stderr.fnmatch_lines([
-        'holdup: Failed checks: tcp://localhost:0 (*), '
-        'path:///doesnt/exist (*), unix:///doesnt/exist (*)'
+        "holdup: Failed checks: 'tcp://localhost:0' (*), "
+        "'path:///doesnt/exist' (*), 'unix:///doesnt/exist' (*). "
+        "Treating as success because of --no-abort.",
     ])
 
 
-@pytest.mark.skipif(os.path.exists('/.dockerenv'), reason="chmod(0) does not work in docker")
+@pytest.mark.skipif(os.path.exists('/.dockerenv'), reason='chmod(0) does not work in docker')
 def test_not_readable(testdir, extra):
     foobar = testdir.maketxtfile(foobar='')
     foobar.chmod(0)
@@ -204,7 +204,10 @@ def test_not_readable(testdir, extra):
         'path://%s' % foobar,
         *extra
     )
-    result.stderr.fnmatch_lines(["holdup: Failed checks: path://%s (Failed access('%s', 'R_OK') test.)" % (foobar, foobar)])
+    result.stderr.fnmatch_lines([
+        "holdup: Failed checks: 'path://%s' (Failed access('%s', R_OK) test). "
+        "Treating as success because of --no-abort." % (foobar, foobar),
+    ])
 
 
 def test_bad_timeout(testdir):
@@ -212,7 +215,7 @@ def test_bad_timeout(testdir):
         'holdup',
         '-t', '0.1',
         '-T', '2',
-        'path:///'
+        'path:///',
     )
     result.stderr.fnmatch_lines([
         '*error: --timeout value must be greater than --check-timeout value!'
@@ -222,23 +225,23 @@ def test_bad_timeout(testdir):
 def test_eval_bad_import(testdir):
     result = testdir.run(
         'holdup',
-        'eval://foobar123.foo()'
+        'eval://foobar123.foo()'  ,
     )
     result.stderr.fnmatch_lines([
-        "*error: argument service: Invalid service spec 'foobar123.foo()'. Import error: No module named*"
+        "*error: argument service: Invalid service spec 'foobar123.foo()'. Import error: No module named*",
     ])
 
 
 def test_eval_bad_expr(testdir):
     result = testdir.run(
         'holdup',
-        'eval://foobar123.foo(.)'
+        'eval://foobar123.foo(.)',
     )
     result.stderr.fnmatch_lines([
         "*error: argument service: Invalid service spec 'foobar123.foo(.)'. Parse error:",
-        '  foobar123.foo(.)',
-        '*               ^',
-        'invalid syntax (<unknown>, line 1)',
+        "  foobar123.foo(.)",
+        "*               ^",
+        "invalid syntax (<unknown>, line 1)",
     ])
 
 
@@ -250,16 +253,20 @@ def test_eval_bad_pg(testdir):
         'eval://psycopg2.connect("dbname=foo host=0.0.0.0")'
     )
     result.stderr.fnmatch_lines([
-        'holdup: Failed service checks: eval://psycopg2.connect* (*'
+        'holdup: Failed checks: eval://psycopg2.connect* (*'
     ])
 
 
-@pytest.mark.parametrize("proto", ['posgtgresql', 'postgres', 'pg'])
+@pytest.mark.parametrize('proto', ['posgtgresql', 'postgres', 'pg'])
 def test_pg_unavailable(testdir, proto):
     pytest.importorskip('psycopg2')
-    result = testdir.run(        'holdup', '-t', '0.1', proto + ':///')
+    result = testdir.run(
+        'holdup',
+        '-t', '0.1',
+        proto + ':///'
+    )
     result.stderr.fnmatch_lines([
-        'holdup: Failed service checks: eval://psycopg2.connect* (*'
+        'holdup: Failed checks: eval://psycopg2.connect* (*'
     ])
 
 
@@ -270,7 +277,7 @@ def test_eval_falsey(testdir):
         'eval://None'
     )
     result.stderr.fnmatch_lines([
-        "holdup: Failed service checks: eval://None (Failed to evaluate 'None'. Result None is falsey.). Aborting!"
+        "holdup: Failed checks: 'eval://None' (Failed to evaluate 'None'. Result None is falsey). Aborting!"
     ])
     assert result.ret == 1
 

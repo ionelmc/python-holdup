@@ -2,6 +2,18 @@
 Changelog
 =========
 
+1.8.0 (2019-05-22)
+------------------
+
+* Added a PostgreSQL check. It handles the ``the database system is starting up`` problem.
+  Contributed by Dan Ailenei in `#6 <https://github.com/ionelmc/python-holdup/pull/6>`_.
+* Changed output so it's more clear and more brief:
+
+  * arguments (checks) are quoted when printed,
+  * "any" checks give exact info about what made it pass,
+  * repetitive information is removed.
+* Simplified the internals for the "AnyCheck".
+
 1.7.0 (2018-11-24)
 ------------------
 
