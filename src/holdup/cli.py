@@ -205,8 +205,7 @@ class EvalCheck(Check):
             raise argparse.ArgumentTypeError(
                 'Invalid service spec {0!r}. Parse error:\n'
                 '  {1.text} {2}^\n'
-                '{1}'.format(expr, exc, ' ' * exc.offset)
-            )
+                '{1}'.format(expr, exc, ' ' * exc.offset))
         for node in ast.walk(tree):
             if isinstance(node, ast.Name):
                 if not hasattr(builtins, node.id):
@@ -214,8 +213,7 @@ class EvalCheck(Check):
                         __import__(node.id)
                     except ImportError as exc:
                         raise argparse.ArgumentTypeError(
-                            'Invalid service spec {!r}. Import error: {}'.format(expr, exc)
-                        )
+                            'Invalid service spec {!r}. Import error: {}'.format(expr, exc))
                     self.ns[node.id] = sys.modules[node.id]
 
     def run(self, _):
@@ -247,7 +245,7 @@ class AnyCheck(Check):
 
 def parse_service(service):
     if '://' not in service:
-        raise argparse.ArgumentTypeError('Invalid service spec {!r}. Must have '://'.'.format(service))
+        raise argparse.ArgumentTypeError('Invalid service spec {!r}. Must have "://".'.format(service))
     proto, value = service.split('://', 1)
 
     if ',' in value and proto != 'eval':
@@ -270,13 +268,11 @@ def parse_value(value, proto):
     if proto == 'tcp':
         if ':' not in value:
             raise argparse.ArgumentTypeError(
-                'Invalid service spec {!r}. Must have ':'. Where\'s the port?'.format(display_value)
-            )
+                'Invalid service spec {!r}. Must have ":". Where\'s the port?'.format(display_value))
         host, port = value.strip('/').split(':', 1)
         if not port.isdigit():
             raise argparse.ArgumentTypeError(
-                'Invalid service spec {!r}. Port must be a number not {!r}.'.format(display_value, port)
-            )
+                'Invalid service spec {!r}. Port must be a number not {!r}.'.format(display_value, port))
         port = int(port)
         return TcpCheck(host, port)
     elif proto in ('pg', 'postgresql', 'postgres'):
@@ -288,8 +284,7 @@ def parse_value(value, proto):
             connection_uri = make_dsn(uri)
         except Exception as exc:
             raise argparse.ArgumentTypeError(
-                'Failed to parse %r: %s. Must be a valid connection URI.' % (display_value, exc)
-            )
+                'Failed to parse %r: %s. Must be a valid connection URI.' % (display_value, exc))
         return PgCheck(connection_uri)
     elif proto == 'unix':
         return UnixCheck(value)
@@ -301,12 +296,12 @@ def parse_value(value, proto):
         return EvalCheck(value)
     else:
         raise argparse.ArgumentTypeError(
-            'Unknown protocol {!r} in {!r}. Must be "tcp", "path", "unix" or "pg".'.format(proto, value)
-        )
+            'Unknown protocol {!r} in {!r}. Must be "tcp", "path", "unix" or "pg".'.format(proto, display_value))
 
 
 parser = argparse.ArgumentParser(
-    usage='%(prog)s [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] [-- command [arg [arg ...]]]',
+    usage='%(prog)s [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] '
+          '[-- command [arg [arg ...]]]',
     description='Wait for services to be ready and optionally exec command.',
 )
 parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
@@ -363,10 +358,8 @@ def main():
             parser.error('--timeout value must be greater than --check-timeout value!')
     pending = list(options.service)
     if options.verbose:
-        print(
-            'holdup: Waiting for {0.timeout}s ({0.check_timeout}s per check, {0.interval}s sleep between loops) '
-            'for these services: {1}'.format(options, ', '.join(map(str, pending)))
-        )
+        print('holdup: Waiting for {0.timeout}s ({0.check_timeout}s per check, {0.interval}s sleep between loops) '
+              'for these services: {1}'.format(options, ', '.join(map(str, pending))))
     start = time()
     at_least_once = True
     while at_least_once or pending and time() - start < options.timeout:
@@ -379,10 +372,8 @@ def main():
         if options.no_abort:
             print(
                 'holdup: Failed checks: {}. Treating as success because of --no-abort.'.format(
-                    ', '.join(map(repr, pending))
-                ),
-                file=sys.stderr,
-            )
+                    ', '.join(map(repr, pending))),
+                file=sys.stderr)
         else:
             parser.exit(1, 'holdup: Failed checks: {}. Aborting!\n'.format(', '.join(map(repr, pending))))
     if command:
