@@ -1,11 +1,11 @@
 #!/bin/bash -eux
 
-cd tests
-
 docker-compose build
 
 trap "docker-compose down" EXIT
 
-while docker-compose run test; do
-    docker-compose down
+for try in {1..10}; do
+    docker-compose down || true
+    docker-compose run --entrypoint "$*" test /test_pg.py || exit 1
 done
+echo "success !"

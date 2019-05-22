@@ -2,6 +2,7 @@ import os
 import socket
 import ssl
 import threading
+from distutils.spawn import find_executable
 
 import pytest
 
@@ -18,18 +19,18 @@ except ImportError:
 pytest_plugins = 'pytester',
 
 
-def urlopen_has_ssl_context():
+def has_urlopen_ssl_context():
     if hasattr(ssl, 'create_default_context'):
         urlopen_argspec = getargspec(urlopen)
         urlopen_args = urlopen_argspec.args
         if hasattr(urlopen_argspec, 'kwonlyargs'):
             urlopen_args.extend(urlopen_argspec.kwonlyargs)
         if 'context' in urlopen_args:
-            return False
-        else:
             return True
-    else:
-        return True
+
+
+def has_docker():
+    return find_executable('docker') and find_executable('docker-compose')
 
 
 @pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success !")']])
@@ -83,7 +84,7 @@ def test_http(testdir, extra, status, proto):
             result.stderr.fnmatch_lines(['*HTTP Error 404*'])
 
 
-@pytest.mark.skipif('urlopen_has_ssl_context()')
+@pytest.mark.skipif('not has_urlopen_ssl_context()')
 def test_http_insecure_with_option(testdir):
     result = testdir.run(
         'holdup',
@@ -94,7 +95,7 @@ def test_http_insecure_with_option(testdir):
     assert result.ret == 0
 
 
-@pytest.mark.skipif('urlopen_has_ssl_context()')
+@pytest.mark.skipif('not has_urlopen_ssl_context()')
 def test_http_insecure_with_proto(testdir):
     result = testdir.run(
         'holdup',
@@ -225,7 +226,7 @@ def test_bad_timeout(testdir):
 def test_eval_bad_import(testdir):
     result = testdir.run(
         'holdup',
-        'eval://foobar123.foo()'  ,
+        'eval://foobar123.foo()',
     )
     result.stderr.fnmatch_lines([
         "*error: argument service: Invalid service spec 'foobar123.foo()'. Import error: No module named*",
@@ -242,31 +243,6 @@ def test_eval_bad_expr(testdir):
         "  foobar123.foo(.)",
         "*               ^",
         "invalid syntax (<unknown>, line 1)",
-    ])
-
-
-def test_eval_bad_pg(testdir):
-    pytest.importorskip('psycopg2')
-    result = testdir.run(
-        'holdup',
-        '-t', '0.1',
-        'eval://psycopg2.connect("dbname=foo host=0.0.0.0")'
-    )
-    result.stderr.fnmatch_lines([
-        'holdup: Failed checks: eval://psycopg2.connect* (*'
-    ])
-
-
-@pytest.mark.parametrize('proto', ['posgtgresql', 'postgres', 'pg'])
-def test_pg_unavailable(testdir, proto):
-    pytest.importorskip('psycopg2')
-    result = testdir.run(
-        'holdup',
-        '-t', '0.1',
-        proto + ':///'
-    )
-    result.stderr.fnmatch_lines([
-        'holdup: Failed checks: eval://psycopg2.connect* (*'
     ])
 
 
@@ -313,3 +289,26 @@ def test_eval_comma_anycheck(testdir, extra):
     if extra:
         result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0
+
+
+@pytest.mark.skipif("not has_docker()")
+def test_pg_in_docker(testdir):
+    os.chdir(os.path.dirname(__file__))
+    result = testdir.run(
+        './test_pg.sh',
+        'holdup', 'pg://app:app@pg/app', '--',
+    )
+    result.stdout.fnmatch_lines(['success !'])
+    assert result.ret == 0
+
+
+@pytest.mark.skipif("not has_docker()")
+@pytest.mark.xfail(strict=False, reason="This may fail on a fast machine.")
+def test_pg_in_docker_no_pg_service(testdir):
+    os.chdir(os.path.dirname(__file__))
+    result = testdir.run(
+        './test_pg.sh',
+        'holdup', 'tcp://pg:5432', '--',
+    )
+    result.stdout.fnmatch_lines(['the database system is starting up'])
+    assert result.ret == 1

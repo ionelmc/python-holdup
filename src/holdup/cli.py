@@ -35,7 +35,7 @@ except ImportError:
 try:
     from psycopg2.extensions import make_dsn
 except ImportError:
-    make_dsn = lambda value: value
+    make_dsn = lambda value: value  # noqa
 
 try:
     from pipes import quote

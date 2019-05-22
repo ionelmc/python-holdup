@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 if __name__ == "__main__":
-    import os
+    import sys
     import traceback
 
     import psycopg2
@@ -12,4 +12,4 @@ if __name__ == "__main__":
         print(cursor.fetchone())
     except Exception:
         traceback.print_exc()
-        os.exit(1)
+        sys.exit(1)
