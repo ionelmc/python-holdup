@@ -64,10 +64,16 @@ setup(
         # 'Programming Language :: Python :: Implementation :: Stackless',
         'Topic :: Utilities',
     ],
+    project_urls={
+        'Documentation': 'https://python-holdup.readthedocs.io/',
+        'Changelog': 'https://python-holdup.readthedocs.io/en/latest/changelog.html',
+        'Issue Tracker': 'https://github.com/ionelmc/python-holdup/issues',
+    },
     keywords=[
         'wait', 'port', 'service', 'docker', 'unix', 'domain', 'socket', 'tcp'
         'waiter', 'holdup', 'hold-up',
     ],
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
     ],

@@ -1,5 +1,4 @@
 language: python
-sudo: false
 dist: xenial
 services:
   - docker
@@ -19,31 +18,32 @@ jobs:
     - stage: unit
       python: '2.7'
       env:
-        - TOXENV=py27,report,coveralls,codecov
+        - TOXENV=py27,coveralls
     - python: '3.4'
       env:
-        - TOXENV=py34,report,coveralls,codecov
+        - TOXENV=py34,coveralls
     - python: '3.5'
       env:
-        - TOXENV=py35,report,coveralls,codecov
+        - TOXENV=py35,coveralls
     - python: '3.6'
       env:
-        - TOXENV=py36,report,coveralls,codecov
+        - TOXENV=py36,coveralls
     - python: '3.7'
       env:
-        - TOXENV=py37,report,coveralls,codecov
-    - python: 'pypy'
+        - TOXENV=py37,coveralls
+    - python: 'pypy2.7-6.0'
       env:
-        - TOXENV=pypy,report,coveralls,codecov
-    - python: 'pypy3'
+        - TOXENV=pypy,coveralls
+    - python: 'pypy3.5-6.0'
       env:
-        - TOXENV=pypy3,report,coveralls,codecov
+        - TOXENV=pypy3,coveralls
     - stage: func
       python: '3.6'
       env:
         - TOXENV=func
   allow_failures:
     - stage: func
+
 before_install:
   - python --version
   - uname -a
@@ -54,27 +54,6 @@ install:
   - easy_install --version
   - pip --version
   - tox --version
-  - |
-    set -ex
-    if [[ $TRAVIS_PYTHON_VERSION == 'pypy' ]]; then
-        (cd $HOME
-         wget https://bitbucket.org/pypy/pypy/downloads/pypy2-v6.0.0-linux64.tar.bz2
-         tar xf pypy2-*.tar.bz2
-         pypy2-*/bin/pypy -m ensurepip
-         pypy2-*/bin/pypy -m pip install -U virtualenv)
-        export PATH=$(echo $HOME/pypy2-*/bin):$PATH
-        export TOXPYTHON=$(echo $HOME/pypy2-*/bin/pypy)
-    fi
-    if [[ $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then
-        (cd $HOME
-         wget https://bitbucket.org/pypy/pypy/downloads/pypy3-v6.0.0-linux64.tar.bz2
-         tar xf pypy3-*.tar.bz2
-         pypy3-*/bin/pypy3 -m ensurepip
-         pypy3-*/bin/pypy3 -m pip install -U virtualenv)
-        export PATH=$(echo $HOME/pypy3-*/bin):$PATH
-        export TOXPYTHON=$(echo $HOME/pypy3-*/bin/pypy3)
-    fi
-    set +x
 script:
   - tox -v
 after_failure:
