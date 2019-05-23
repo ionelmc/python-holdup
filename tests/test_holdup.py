@@ -291,10 +291,16 @@ def test_eval_comma_anycheck(testdir, extra):
     assert result.ret == 0
 
 
-@pytest.mark.skipif("not has_docker()")
-def test_pg_in_docker(testdir):
+@pytest.fixture
+def testdir2(testdir):
     os.chdir(os.path.dirname(__file__))
-    result = testdir.run(
+    testdir.tmpdir.join('stderr').mksymlinkto(testdir.tmpdir.join('stdout'))
+    yield testdir
+
+
+@pytest.mark.skipif("not has_docker()")
+def test_func_pg(testdir2):
+    result = testdir2.run(
         './test_pg.sh',
         'holdup', 'pg://app:app@pg/app', '--',
     )
@@ -303,9 +309,8 @@ def test_pg_in_docker(testdir):
 
 
 @pytest.mark.skipif("not has_docker()")
-def test_pg_in_docker_no_pg_service(testdir):
-    os.chdir(os.path.dirname(__file__))
-    result = testdir.run(
+def test_func_pg_tcp_service_failure(testdir2):
+    result = testdir2.run(
         './test_pg.sh',
         'holdup', 'tcp://pg:5432',
         '-T', '0.01',
@@ -314,5 +319,5 @@ def test_pg_in_docker_no_pg_service(testdir):
         '-v',
         '--',
     )
-    result.stderr.fnmatch_lines(['*the database system is starting up'])
+    result.stdout.fnmatch_lines(['*the database system is starting up'])
     assert result.ret == 1

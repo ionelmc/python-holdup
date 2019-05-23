@@ -1,17 +1,23 @@
 language: python
 sudo: false
+dist: xenial
 services:
   - docker
 env:
   global:
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
     - SEGFAULT_SIGNALS=all
-  matrix:
-    - TOXENV=check
-    - TOXENV=docs
-matrix:
+stages:
+  - lint
+  - unit
+  - func
+jobs:
   include:
-    - python: '2.7'
+    - stage: lint
+      env: TOXENV=check
+    - env: TOXENV=docs
+    - stage: unit
+      python: '2.7'
       env:
         - TOXENV=py27,report,coveralls,codecov
     - python: '3.4'
@@ -24,8 +30,6 @@ matrix:
       env:
         - TOXENV=py36,report,coveralls,codecov
     - python: '3.7'
-      dist: xenial
-      sudo: required
       env:
         - TOXENV=py37,report,coveralls,codecov
     - python: 'pypy'
@@ -34,6 +38,12 @@ matrix:
     - python: 'pypy3'
       env:
         - TOXENV=pypy3,report,coveralls,codecov
+    - stage: func
+      python: '3.6'
+      env:
+        - TOXENV=func
+  allow_failures:
+    - stage: func
 before_install:
   - python --version
   - uname -a
