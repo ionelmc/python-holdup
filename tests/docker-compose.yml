@@ -1,8 +1,8 @@
-version: "3.7"
+version: "3.4"
 
 services:
   pg:
-    image: postgres:10
+    image: postgres:9.4
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app

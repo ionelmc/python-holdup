@@ -1,6 +1,7 @@
 language: python
 sudo: false
-cache: pip
+services:
+  - docker
 env:
   global:
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
