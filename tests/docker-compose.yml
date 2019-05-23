@@ -2,16 +2,15 @@ version: "3.4"
 
 services:
   pg:
-    image: postgres:9.4
+    image: postgres:10
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
       POSTGRES_DB: app
+      POSTGRES_INITDB_ARGS: "--data-checksums"
   test:
     build:
       context: ..
       dockerfile: tests/Dockerfile
-    depends_on:
-      - pg
     volumes:
       - $PWD:/src

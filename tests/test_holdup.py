@@ -303,12 +303,16 @@ def test_pg_in_docker(testdir):
 
 
 @pytest.mark.skipif("not has_docker()")
-@pytest.mark.xfail(strict=False, reason="This may fail on a fast machine.")
 def test_pg_in_docker_no_pg_service(testdir):
     os.chdir(os.path.dirname(__file__))
     result = testdir.run(
         './test_pg.sh',
-        'holdup', 'tcp://pg:5432', '--',
+        'holdup', 'tcp://pg:5432',
+        '-T', '0.01',
+        '-i', '0',
+        '-t', '10',
+        '-v',
+        '--',
     )
-    result.stdout.fnmatch_lines(['the database system is starting up'])
+    result.stderr.fnmatch_lines(['*the database system is starting up'])
     assert result.ret == 1

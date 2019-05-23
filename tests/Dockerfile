@@ -58,3 +58,5 @@ COPY setup.* *.rst MANIFEST.in /project/
 COPY src /project/src
 RUN pip install /project
 COPY tests/test_pg.py /
+
+CMD ["true"]
