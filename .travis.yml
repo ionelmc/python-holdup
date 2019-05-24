@@ -19,9 +19,6 @@ jobs:
       python: '2.7'
       env:
         - TOXENV=py27,coveralls
-    - python: '3.4'
-      env:
-        - TOXENV=py34,coveralls
     - python: '3.5'
       env:
         - TOXENV=py35,coveralls
