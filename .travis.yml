@@ -31,9 +31,11 @@ jobs:
     - python: 'pypy2.7-6.0'
       env:
         - TOXENV=pypy,coveralls
+        - TOXPYTHON=pypy
     - python: 'pypy3.5-6.0'
       env:
         - TOXENV=pypy3,coveralls
+        - TOXPYTHON=pypy3
     - stage: func
       python: '3.6'
       env:

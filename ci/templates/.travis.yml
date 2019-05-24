@@ -27,6 +27,9 @@ jobs:
 {% endif %}
       env:
         - TOXENV={{ env }},coveralls
+{% if env.startswith("pypy") %}
+        - TOXPYTHON={{ env.split("-")[0] }}
+{% endif %}
 {% endfor %}
     - stage: func
       python: '3.6'
