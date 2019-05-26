@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 if __name__ == "__main__":
     import sys
     import time
