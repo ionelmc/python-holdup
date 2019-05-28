@@ -2,7 +2,7 @@
 Changelog
 =========
 
-1.8.0 (2019-05-23)
+1.8.0 (2019-05-28)
 ------------------
 
 * Added a PostgreSQL check. It handles the ``the database system is starting up`` problem.
