@@ -291,6 +291,34 @@ def test_eval_comma_anycheck(testdir, extra):
     assert result.ret == 0
 
 
+@pytest.mark.parametrize('proto', ['postgresql', 'postgres', 'pg'])
+def test_pg_timeout(testdir, proto):
+    result = testdir.run(
+        'holdup',
+        '-t', '0.1',
+        proto + '://0.0.0.0/foo'
+    )
+    result.stderr.fnmatch_lines([
+        "holdup: Failed checks: 'postgresql://0.0.0.0/foo' (*",
+    ])
+
+
+@pytest.mark.parametrize('proto', ['postgresql', 'postgres', 'pg'])
+def test_pg_unavailable(testdir, proto):
+    testdir.tmpdir.join('psycopg2cffi').ensure(dir=1)
+    testdir.tmpdir.join('psycopg2cffi/__init__.py').write('raise ImportError("Disabled for testing")')
+    testdir.tmpdir.join('psycopg2').ensure(dir=1)
+    testdir.tmpdir.join('psycopg2/__init__.py').write('raise ImportError("Disabled for testing")')
+    result = testdir.run(
+        'holdup',
+        '-t', '0.1',
+        proto + ':///'
+    )
+    result.stderr.fnmatch_lines([
+        'holdup: error: argument service: Protocol %s unusable. Install holdup[[]pg[]].' % proto,
+    ])
+
+
 @pytest.fixture
 def testdir2(testdir):
     os.chdir(os.path.dirname(__file__))

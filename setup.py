@@ -78,9 +78,8 @@ setup(
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
     ],
     extras_require={
-        # eg:
-        #   'rst': ['docutils>=0.11'],
-        #   ':python_version=="2.6"': ['argparse'],
+        'pg:platform_python_implementation=="PyPy"': ['psycopg2cffi'],
+        'pg:platform_python_implementation=="CPython"': ['psycopg2'],
     },
     entry_points={
         'console_scripts': [

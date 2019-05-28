@@ -30,7 +30,10 @@ from time import time
 try:
     import psycopg2
 except ImportError:
-    psycopg2 = None
+    try:
+        import psycopg2cffi as psycopg2
+    except ImportError:
+        psycopg2 = None
 
 try:
     from psycopg2.extensions import make_dsn
@@ -103,9 +106,15 @@ class TcpCheck(Check):
 class PgCheck(Check):
     def __init__(self, connection_string):
         self.connection_string = connection_string
+        if '?' in connection_string.rsplit('/', 1)[1]:
+            self.separator = '&'
+        else:
+            self.separator = '?'
 
     def run(self, options):
-        with closing(psycopg2.connect(self.connection_string, connect_timeout=options.check_timeout)) as conn:
+        with closing(psycopg2.connect('{}{}connect_timeout={}'.format(
+            self.connection_string, self.separator, options.check_timeout
+        ))) as conn:
             with closing(conn.cursor()) as cur:
                 cur.execute('SELECT version()')
                 cur.fetchone()
@@ -277,7 +286,7 @@ def parse_value(value, proto):
         return TcpCheck(host, port)
     elif proto in ('pg', 'postgresql', 'postgres'):
         if psycopg2 is None:
-            raise argparse.ArgumentTypeError('Protocol {} unusable. Install psycopg2 or holdup[pg].'.format(proto))
+            raise argparse.ArgumentTypeError('Protocol {} unusable. Install holdup[pg].'.format(proto))
 
         uri = 'postgresql://{}'.format(value)
         try:
