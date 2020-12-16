@@ -2,7 +2,7 @@ import os
 import socket
 import ssl
 import threading
-from distutils.spawn import find_executable
+from distutils import spawn
 
 import pytest
 
@@ -30,7 +30,7 @@ def has_urlopen_ssl_context():
 
 
 def has_docker():
-    return find_executable('docker') and find_executable('docker-compose')
+    return spawn.find_executable('docker') and spawn.find_executable('docker-compose')
 
 
 @pytest.fixture(params=[[], ['--', 'python', '-c', 'print("success !")']])
@@ -261,7 +261,7 @@ def test_eval_falsey(testdir):
 def test_eval_distutils(testdir, extra):
     result = testdir.run(
         'holdup',
-        'eval://distutils.spawn.find_executable("find")',
+        'eval://__import__("distutils.spawn").spawn.find_executable("find")',
         *extra
     )
     if extra:
