@@ -322,8 +322,8 @@ parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
                          '"eval://expr", '
                          '"pg://user:password@host:port/dbname" ("postgres" and "postgresql" also allowed), '
                          '"http://urn", '
-                         '"http://urn", '
-                         '"https+insecure//urn" (status 200 expected for http*). '
+                         '"https://urn", '
+                         '"https+insecure://urn" (status 200 expected for http*). '
                          'Join protocols with a comma to make holdup exit at the first '
                          'passing one, eg: "tcp://host:1,host:2" or "tcp://host:1,tcp://host:2" are equivalent and mean '
                          '`any that pass`.')

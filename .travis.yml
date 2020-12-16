@@ -18,9 +18,6 @@ matrix:
         - TOXENV=py27,coveralls
       python: '2.7'
     - env:
-        - TOXENV=py35,coveralls
-      python: '3.5'
-    - env:
         - TOXENV=py36,coveralls
       python: '3.6'
     - env:

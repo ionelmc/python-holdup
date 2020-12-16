@@ -79,11 +79,13 @@ Positional arguments:
     A service to wait for. Supported protocols:
     "tcp://host:port/", "path:///path/to/something",
     "unix:///path/to/domain.sock", "eval://expr",
-    "http://urn", "http://urn", "https+insecure//urn" (status 200 expected). Join
-    protocols with a comma to make holdup exit at the
-    first passing one, eg: tcp://host:1,host:2 or
-    tcp://host:1,tcp://host:2 are equivalent and mean "any
-    that pass".
+    "pg://user:password@host:port/dbname" ("postgres" and
+    "postgresql" also allowed), "http://urn",
+    "https://urn", "https+insecure://urn" (status 200
+    expected for http*). Join protocols with a comma to
+    make holdup exit at the first passing one, eg:
+    "tcp://host:1,host:2" or "tcp://host:1,tcp://host:2"
+    are equivalent and mean `any that pass`.
 
   ``command``
     An optional command to exec.
