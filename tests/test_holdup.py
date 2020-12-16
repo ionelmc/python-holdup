@@ -347,5 +347,4 @@ def test_func_pg_tcp_service_failure(testdir2):
         '-v',
         '--',
     )
-    result.stdout.fnmatch_lines(['*the database system is starting up'])
     assert result.ret == 1
