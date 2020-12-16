@@ -47,9 +47,9 @@ Overview
     :alt: Supported implementations
     :target: https://pypi.org/project/holdup
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v1.7.0.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v1.8.1.svg
     :alt: Commits since latest release
-    :target: https://github.com/ionelmc/python-holdup/compare/v1.7.0...master
+    :target: https://github.com/ionelmc/python-holdup/compare/v1.8.1...master
 
 
 
