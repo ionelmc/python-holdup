@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import os
-
+import sphinx_py3doc_enhanced_theme
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -15,18 +14,13 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
 ]
-if os.getenv('SPELLCHECK'):
-    extensions += 'sphinxcontrib.spelling',
-    spelling_show_suggestions = True
-    spelling_lang = 'en_US'
-
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'Holdup'
 year = '2016-2019'
 author = 'Ionel Cristian Mărieș'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '1.8.0'
+version = release = '1.7.0'
 
 pygments_style = 'trac'
 templates_path = ['.']
@@ -34,7 +28,6 @@ extlinks = {
     'issue': ('https://github.com/ionelmc/python-holdup/issues/%s', '#'),
     'pr': ('https://github.com/ionelmc/python-holdup/pull/%s', 'PR #'),
 }
-import sphinx_py3doc_enhanced_theme
 html_theme = "sphinx_py3doc_enhanced_theme"
 html_theme_path = [sphinx_py3doc_enhanced_theme.get_html_theme_path()]
 html_theme_options = {

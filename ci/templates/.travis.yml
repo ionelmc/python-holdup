@@ -1,49 +1,38 @@
 language: python
 dist: xenial
-services:
-  - docker
+virt: lxd
+cache: false
 env:
   global:
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
     - SEGFAULT_SIGNALS=all
-stages:
-  - lint
-  - unit
-  - func
-jobs:
+    - LANG=en_US.UTF-8
+matrix:
   include:
-    - stage: lint
-      env: TOXENV=check
-    - env: TOXENV=docs
-    - stage: unit
-{% for env in tox_environments %}
-    {%+ if not loop.first %}- {% else %}  {% endif -%}
-{% if env.startswith("pypy3") -%}
-      python: 'pypy3.5-6.0'
-{% elif env.startswith("pypy") -%}
-      python: 'pypy2.7-6.0'
-{% else -%}
-      python: '{{ "{0[2]}.{0[3]}".format(env) }}'
-{% endif %}
+    - python: '3.6'
       env:
+        - TOXENV=check
+    - python: '3.6'
+      env:
+        - TOXENV=docs
+{%- for env in tox_environments %}{{ '' }}
+    - env:
         - TOXENV={{ env }},coveralls
-{% if env.startswith("pypy") %}
-        - TOXPYTHON={{ env.split("-")[0] }}
-{% endif %}
-{% endfor %}
-    - stage: func
-      python: '3.6'
-      env:
-        - TOXENV=func
-  allow_failures:
-    - stage: func
-
+{%- if env.startswith('pypy3') %}{{ '' }}
+        - TOXPYTHON=pypy3
+      python: 'pypy3'
+{%- elif env.startswith('pypy') %}{{ '' }}
+      python: 'pypy'
+{%- else %}{{ '' }}
+      python: '{{ '{0[2]}.{0[3]}'.format(env) }}'
+{%- endif %}{{ '' }}
+{%- endfor %}{{ '' }}
 before_install:
   - python --version
   - uname -a
-  - lsb_release -a
+  - lsb_release -a || true
 install:
-  - pip install tox
+  - python -mpip install --progress-bar=off tox -rci/requirements.txt
   - virtualenv --version
   - easy_install --version
   - pip --version
@@ -51,8 +40,8 @@ install:
 script:
   - tox -v
 after_failure:
-  - more .tox/log/* | cat
-  - more .tox/*/log/* | cat
+  - cat .tox/log/*
+  - cat .tox/*/log/*
 notifications:
   email:
     on_success: never

@@ -19,7 +19,7 @@ Overview
     :target: https://readthedocs.org/projects/python-holdup
     :alt: Documentation Status
 
-.. |travis| image:: https://travis-ci.org/ionelmc/python-holdup.svg?branch=master
+.. |travis| image:: https://api.travis-ci.org/ionelmc/python-holdup.svg?branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.org/ionelmc/python-holdup
 
@@ -35,10 +35,6 @@ Overview
     :alt: PyPI Package latest release
     :target: https://pypi.org/project/holdup
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v1.8.0.svg
-    :alt: Commits since latest release
-    :target: https://github.com/ionelmc/python-holdup/compare/v1.8.0...master
-
 .. |wheel| image:: https://img.shields.io/pypi/wheel/holdup.svg
     :alt: PyPI Wheel
     :target: https://pypi.org/project/holdup
@@ -50,6 +46,11 @@ Overview
 .. |supported-implementations| image:: https://img.shields.io/pypi/implementation/holdup.svg
     :alt: Supported implementations
     :target: https://pypi.org/project/holdup
+
+.. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v1.7.0.svg
+    :alt: Commits since latest release
+    :target: https://github.com/ionelmc/python-holdup/compare/v1.7.0...master
+
 
 
 .. end-badges
@@ -136,7 +137,7 @@ Skipping SSL Certificate verification requires a minimum of Python-2.7.9 or Pyth
 Development
 ===========
 
-To run the all tests run::
+To run all the tests run::
 
     tox
 

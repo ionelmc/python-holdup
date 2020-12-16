@@ -1,54 +1,51 @@
 language: python
 dist: xenial
-services:
-  - docker
+virt: lxd
+cache: false
 env:
   global:
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
     - SEGFAULT_SIGNALS=all
-stages:
-  - lint
-  - unit
-  - func
-jobs:
+    - LANG=en_US.UTF-8
+matrix:
   include:
-    - stage: lint
-      env: TOXENV=check
-    - env: TOXENV=docs
-    - stage: unit
-      python: '2.7'
-      env:
-        - TOXENV=py27,coveralls
-    - python: '3.5'
-      env:
-        - TOXENV=py35,coveralls
     - python: '3.6'
       env:
+        - TOXENV=check
+    - python: '3.6'
+      env:
+        - TOXENV=docs
+    - env:
+        - TOXENV=py27,coveralls
+      python: '2.7'
+    - env:
+        - TOXENV=py35,coveralls
+      python: '3.5'
+    - env:
         - TOXENV=py36,coveralls
-    - python: '3.7'
-      env:
+      python: '3.6'
+    - env:
         - TOXENV=py37,coveralls
-    - python: 'pypy2.7-6.0'
-      env:
+      python: '3.7'
+    - env:
+        - TOXENV=py38,coveralls
+      python: '3.8'
+    - env:
+        - TOXENV=py39,coveralls
+      python: '3.9'
+    - env:
         - TOXENV=pypy,coveralls
-        - TOXPYTHON=pypy
-    - python: 'pypy3.5-6.0'
-      env:
+      python: 'pypy'
+    - env:
         - TOXENV=pypy3,coveralls
         - TOXPYTHON=pypy3
-    - stage: func
-      python: '3.6'
-      env:
-        - TOXENV=func
-  allow_failures:
-    - stage: func
-
+      python: 'pypy3'
 before_install:
   - python --version
   - uname -a
-  - lsb_release -a
+  - lsb_release -a || true
 install:
-  - pip install tox
+  - python -mpip install --progress-bar=off tox -rci/requirements.txt
   - virtualenv --version
   - easy_install --version
   - pip --version
@@ -56,8 +53,8 @@ install:
 script:
   - tox -v
 after_failure:
-  - more .tox/log/* | cat
-  - more .tox/*/log/* | cat
+  - cat .tox/log/*
+  - cat .tox/*/log/*
 notifications:
   email:
     on_success: never
