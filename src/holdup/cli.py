@@ -113,7 +113,7 @@ class PgCheck(Check):
 
     def run(self, options):
         with closing(psycopg2.connect('{}{}connect_timeout={}'.format(
-            self.connection_string, self.separator, options.check_timeout
+            self.connection_string, self.separator, max(1, int(options.check_timeout))
         ))) as conn:
             with closing(conn.cursor()) as cur:
                 cur.execute('SELECT version()')

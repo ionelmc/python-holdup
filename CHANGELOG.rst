@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.8.1 (2020-12-16)
+------------------
+
+* Add support for PostgreSQL 12+ clients (strict integer type-checking on ``connect_timeout``). The float is now converted to an integer.
+
 1.8.0 (2019-05-28)
 ------------------
 
