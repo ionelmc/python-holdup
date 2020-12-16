@@ -1,6 +1,5 @@
 language: python
 dist: xenial
-virt: lxd
 cache: false
 env:
   global:
