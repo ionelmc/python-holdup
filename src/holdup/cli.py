@@ -20,6 +20,7 @@ from __future__ import print_function
 import argparse
 import ast
 import os
+import re
 import socket
 import ssl
 import sys
@@ -104,6 +105,8 @@ class TcpCheck(Check):
 
 
 class PgCheck(Check):
+    password_re = re.compile(r':[^@:]+@')
+
     def __init__(self, connection_string):
         self.connection_string = connection_string
         if '?' in connection_string.rsplit('/', 1)[1]:
@@ -120,7 +123,7 @@ class PgCheck(Check):
                 cur.fetchone()
 
     def __str__(self):
-        return repr(self.connection_string)
+        return repr(self.password_re.sub(':******@', self.connection_string, 1))
 
 
 class HttpCheck(Check):
@@ -341,7 +344,14 @@ parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
 parser.add_argument('--insecure', action='store_true',
-                    help='Disable SSL Certificate verification for HTTPS services')
+                    help='Disable SSL Certificate verification for HTTPS services.')
+
+
+def add_version_argument(parser):
+    import holdup
+    parser.add_argument('--version', action='version',
+                        version="%(prog)s {} from {}".format(holdup.__version__, holdup.__file__),
+                        help="display the version of the holdup package and its location, then exit.")
 
 
 def main():
@@ -354,6 +364,7 @@ def main():
 
     Does stuff.
     """
+    add_version_argument(parser)
     if '--' in sys.argv:
         pos = sys.argv.index('--')
         argv, command = sys.argv[1:pos], sys.argv[pos + 1:]

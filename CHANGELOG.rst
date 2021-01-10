@@ -2,6 +2,12 @@
 Changelog
 =========
 
+1.9.0 (2021-01-11)
+------------------
+
+* Added a ``--version`` argument.
+* Changed verbose output to mask passwords in postgresql checks.
+
 1.8.1 (2020-12-16)
 ------------------
 
