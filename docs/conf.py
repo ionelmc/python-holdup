@@ -17,7 +17,7 @@ extensions = [
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'Holdup'
-year = '2016-2019'
+year = '2016-2021'
 author = 'Ionel Cristian Mărieș'
 copyright = '{0}, {1}'.format(year, author)
 version = release = '1.8.1'

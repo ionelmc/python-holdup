@@ -20,7 +20,7 @@ default_context:
     distribution_name: holdup
     email: contact@ionelmc.ro
     full_name: Ionel Cristian Mărieș
-    landscape: no
+    legacy_python: yes
     license: BSD 2-Clause License
     linter: flake8
     package_name: holdup
@@ -29,7 +29,7 @@ default_context:
     project_short_description: A tool to wait for services and execute command. Useful for Docker containers that depend on slow to start services (like almost everything).
     pypi_badge: yes
     pypi_disable_upload: no
-    release_date: '2018-11-24'
+    release_date: '2020-12-16'
     repo_hosting: github.com
     repo_hosting_domain: github.com
     repo_name: python-holdup
@@ -47,7 +47,7 @@ default_context:
     test_runner: pytest
     travis: yes
     travis_osx: no
-    version: 1.7.0
+    version: 1.8.1
     website: https://blog.ionelmc.ro
     year_from: '2016'
-    year_to: '2019'
+    year_to: '2021'
