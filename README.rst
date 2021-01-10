@@ -19,9 +19,9 @@ Overview
     :target: https://readthedocs.org/projects/python-holdup
     :alt: Documentation Status
 
-.. |travis| image:: https://api.travis-ci.org/ionelmc/python-holdup.svg?branch=master
+.. |travis| image:: https://api.travis-ci.com/ionelmc/python-holdup.svg?branch=master
     :alt: Travis-CI Build Status
-    :target: https://travis-ci.org/ionelmc/python-holdup
+    :target: https://travis-ci.com/ionelmc/python-holdup
 
 .. |requires| image:: https://requires.io/github/ionelmc/python-holdup/requirements.svg?branch=master
     :alt: Requirements Status
