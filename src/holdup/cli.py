@@ -64,6 +64,13 @@ except ImportError:
 
 class Check(object):
     error = None
+    password_re = re.compile(r':[^@:]+@')
+
+    def str(self, strip_password=True):
+        if strip_password:
+            return self.password_re.sub(':******@', str(self.connection_string), 1)
+        else:
+            return str(self)
 
     def is_passing(self, options):
         try:
@@ -105,7 +112,6 @@ class TcpCheck(Check):
 
 
 class PgCheck(Check):
-    password_re = re.compile(r':[^@:]+@')
 
     def __init__(self, connection_string):
         self.connection_string = connection_string
@@ -339,7 +345,9 @@ parser.add_argument('-T', '--check-timeout', metavar='SECONDS', type=float, defa
 parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.2,
                     help='How often to check. Default: %(default)s')
 parser.add_argument('-v', '--verbose', action='store_true',
-                    help='Verbose mode. ')
+                    help='Verbose mode.')
+parser.add_argument('--verbose-passwords', action='store_true',
+                    help='Disable PostgreSQL password masking.')
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
