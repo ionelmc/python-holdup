@@ -221,9 +221,7 @@ class HttpCheck(Check):
 
     def run(self, options):
         handlers = list(self.handlers)
-        insecure = self.insecure
-        if options.insecure:
-            insecure = True
+        insecure = self.insecure or options.insecure
         if self.can_create_default_context():
             ssl_ctx = ssl.create_default_context()
             if insecure:
