@@ -175,13 +175,6 @@ class HttpCheck(Check):
             self.insecure = True
             url = url._replace(scheme='https')
 
-        if self.can_create_default_context():
-            ssl_ctx = ssl.create_default_context()
-            if self.insecure:
-                ssl_ctx.check_hostname = False
-                ssl_ctx.verify_mode = ssl.CERT_NONE
-            self.handlers.append(HTTPSHandler(context=ssl_ctx))
-
         if url.port:
             self.netloc = '{0.hostname}:{0.port}'.format(url)
         else:
