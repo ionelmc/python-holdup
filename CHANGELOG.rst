@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.0.0 (2021-04-08)
+------------------
+
+* Added support for password masking (``--verbose-passwords`` to disable this feature).
+* Overhauled checks display a bit, output might be slightly different.
+* Added support for basic and digest HTTP authentication.
+* Published Docker image at https://hub.docker.com/r/ionelmc/holdup (Alpine based).
+
 1.9.0 (2021-01-11)
 ------------------
 

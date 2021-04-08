@@ -90,7 +90,7 @@ class Check(object):
         else:
             self.error = False
             if options.verbose:
-                print('holdup: Passed check: {!r}'.format(self))
+                print('holdup: Passed check: {}'.format(self.display(verbose=True, credentials=not options.verbose_passwords)))
             return True
 
     @property
@@ -133,7 +133,7 @@ class TcpCheck(Check):
     def display(self, verbose, **_):
         definition = 'tcp://{0.host}:{0.port}'.format(self)
         if verbose:
-            return '{!r} -> {.status}'.format(repr(definition), self)
+            return '{!r} -> {.status}'.format(definition, self)
         else:
             return definition
 
@@ -166,13 +166,35 @@ class PgCheck(Check):
 
 class HttpCheck(Check):
     def __init__(self, url):
-        self.do_insecure = False
-        url = urlparse(url)
+        self.handlers = []
+        self.parsed_url = url = urlparse(url)
         self.scheme = url.scheme
+        self.insecure = False
         if url.scheme == 'https+insecure':
-            self.do_insecure = True
+            self.insecure = True
             url = url._replace(scheme='https')
-        self.url = url
+
+        if self.can_create_default_context():
+            ssl_ctx = ssl.create_default_context()
+            if self.insecure:
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+            self.handlers.append(HTTPSHandler(context=ssl_ctx))
+
+        if url.port:
+            self.netloc = '{0.hostname}:{0.port}'.format(url)
+        else:
+            self.netloc = url.hostname
+
+        cleaned_url = urlunparse(url._replace(netloc=self.netloc))
+
+        if url.username or url.password:
+            password_mgr = HTTPPasswordMgrWithDefaultRealm()
+            password_mgr.add_password(None, cleaned_url, url.username, url.password)
+            self.handlers.append(HTTPDigestAuthHandler(passwd=password_mgr))
+            self.handlers.append(HTTPBasicAuthHandler(password_mgr=password_mgr))
+
+        self.url = cleaned_url
 
     @staticmethod
     def can_create_default_context():
@@ -198,30 +220,21 @@ class HttpCheck(Check):
 
     def run(self, options):
         handlers = []
-        do_insecure = self.do_insecure
+        insecure = self.insecure
         if options.insecure:
-            do_insecure = True
+            insecure = True
         if self.can_create_default_context():
             ssl_ctx = ssl.create_default_context()
-            if do_insecure:
+            if insecure:
                 ssl_ctx.check_hostname = False
                 ssl_ctx.verify_mode = ssl.CERT_NONE
             handlers.append(HTTPSHandler(context=ssl_ctx))
-        else:
-            if do_insecure:
-                raise Exception('Insecure HTTPS is not supported with the current version of Python')
+        elif insecure:
+            raise Exception('Insecure HTTPS is not supported with the current version of Python')
 
-        url = urlunparse(self.url._replace(netloc='{0.hostname}:{0.port}'.format(self.url)))
+        opener = build_opener(*handlers, *self.handlers)
 
-        if self.url.username or self.url.password:
-            password_mgr = HTTPPasswordMgrWithDefaultRealm()
-            password_mgr.add_password(None, url, self.url.username, self.url.password)
-            handlers.append(HTTPDigestAuthHandler(passwd=password_mgr))
-            handlers.append(HTTPBasicAuthHandler(password_mgr=password_mgr))
-
-        opener = build_opener(*handlers)
-        print(repr(url))
-        with closing(opener.open(url, timeout=options.check_timeout)) as req:
+        with closing(opener.open(self.url, timeout=options.check_timeout)) as req:
             status = req.getcode()
             if status != 200:
                 raise Exception('Expected status code 200, got {!r}'.format(status))
@@ -230,13 +243,13 @@ class HttpCheck(Check):
         return 'HttpCheck({0.url}, insecure={0.do_insecure}, status={0.status})'.format(self)
 
     def display_definition(self, credentials):
-        url = self.url._replace(scheme=self.scheme)
+        url = self.parsed_url
         if not credentials:
             if not url.password:
                 mask = '******'
             else:
                 mask = '{.username}:******'.format(url)
-            url = url._replace(netloc='{}@{}'.format(mask, url.hostname))
+            url = url._replace(netloc='{}@{}'.format(mask, self.netloc))
         return urlunparse(url)
 
 
@@ -315,7 +328,7 @@ class AnyCheck(Check):
             if check.is_passing(options):
                 break
         else:
-            raise Exception('No checks passed')
+            raise Exception('ALL FAILED')
 
     def __repr__(self):
         return 'AnyCheck({}, status={.status})'.format(', '.join(map(repr, self.checks)), self)

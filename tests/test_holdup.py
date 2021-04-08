@@ -83,6 +83,19 @@ def test_http(testdir, extra, status, proto):
         else:
             result.stderr.fnmatch_lines(['*HTTP Error 404*'])
 
+@pytest.mark.parametrize('auth', ['basic-auth', 'digest-auth/auth'])
+@pytest.mark.parametrize('proto', ['http', 'https'])
+def test_http(testdir, extra, auth, proto):
+    result = testdir.run(
+        'holdup',
+        '-T', '5',
+        '-t', '5.1',
+        '%s://usr:pwd@httpbin.org/%s/usr/pwd' % (proto, auth),
+        *extra
+    )
+    if extra:
+        result.stdout.fnmatch_lines(['success !'])
+
 
 @pytest.mark.skipif('not has_urlopen_ssl_context()')
 def test_http_insecure_with_option(testdir):
@@ -125,10 +138,10 @@ def test_any(testdir, extra):
     if extra:
         result.stdout.fnmatch_lines([
             "holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: "
-            "any('tcp://localhost:*', 'path:///tmp/holdup-test', 'unix:///tmp/holdup-test.sock')",
-            "holdup: Passed check: 'path:///tmp/holdup-test' (PASSED)",
-            "holdup: Passed check: any('tcp://localhost:*' (*), 'path:///tmp/holdup-test' (PASSED), "
-            "'unix:///tmp/holdup-test.sock' (PENDING)) (PASSED)",
+            "any(tcp://localhost:*, path:///tmp/holdup-test, unix:///tmp/holdup-test.sock)",
+            "holdup: Passed check: 'path:///tmp/holdup-test' -> PASSED",
+            "holdup: Passed check: any('tcp://localhost:*' -> *, 'path:///tmp/holdup-test' -> PASSED, "
+            "'unix:///tmp/holdup-test.sock' -> PENDING) -> PASSED",
             "holdup: Executing: python -c 'print(\"success !\")'",
             "success !",
         ])
@@ -170,8 +183,8 @@ def test_any_failed(testdir):
         'tcp://localhost:%s/,path:///doesnt/exist,unix:///doesnt/exist' % port
     )
     result.stderr.fnmatch_lines([
-        "holdup: Failed checks: any('tcp://localhost:%s' (*), 'path:///doesnt/exist' (*), "
-        "'unix:///doesnt/exist' (*)) (No checks passed). "
+        "holdup: Failed checks: any('tcp://localhost:%s' -> *, 'path:///doesnt/exist' -> *, "
+        "'unix:///doesnt/exist' -> *) -> ALL FAILED. "
         "Aborting!" % port,
     ])
 
@@ -188,8 +201,8 @@ def test_no_abort(testdir, extra):
         *extra
     )
     result.stderr.fnmatch_lines([
-        "holdup: Failed checks: 'tcp://localhost:0' (*), "
-        "'path:///doesnt/exist' (*), 'unix:///doesnt/exist' (*). "
+        "holdup: Failed checks: 'tcp://localhost:0' -> *, "
+        "'path:///doesnt/exist' -> *, 'unix:///doesnt/exist' -> *. "
         "Treating as success because of --no-abort.",
     ])
 
@@ -206,7 +219,7 @@ def test_not_readable(testdir, extra):
         *extra
     )
     result.stderr.fnmatch_lines([
-        "holdup: Failed checks: 'path://%s' (Failed access('%s', R_OK) test). "
+        "holdup: Failed checks: 'path://%s' -> Failed access('%s', R_OK) test. "
         "Treating as success because of --no-abort." % (foobar, foobar),
     ])
 
@@ -253,7 +266,7 @@ def test_eval_falsey(testdir):
         'eval://None'
     )
     result.stderr.fnmatch_lines([
-        "holdup: Failed checks: 'eval://None' (Failed to evaluate 'None'. Result None is falsey). Aborting!"
+        "holdup: Failed checks: 'eval://None' -> Failed to evaluate 'None'. Result None is falsey. Aborting!"
     ])
     assert result.ret == 1
 
