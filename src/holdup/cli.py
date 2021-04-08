@@ -58,22 +58,23 @@ except ImportError:
     from inspect import getargspec
 
 try:
-    from urllib.request import build_opener
     from urllib.request import HTTPBasicAuthHandler
     from urllib.request import HTTPDigestAuthHandler
     from urllib.request import HTTPPasswordMgrWithDefaultRealm
     from urllib.request import HTTPSHandler
+    from urllib.request import build_opener
     from urllib.request import urlopen
 except ImportError:
-    from urllib2 import build_opener
     from urllib2 import HTTPBasicAuthHandler
     from urllib2 import HTTPDigestAuthHandler
     from urllib2 import HTTPPasswordMgrWithDefaultRealm
     from urllib2 import HTTPSHandler
+    from urllib2 import build_opener
     from urllib2 import urlopen
 
 try:
-    from urllib.parse import urlparse, urlunparse
+    from urllib.parse import urlparse
+    from urllib.parse import urlunparse
 except ImportError:
     from urlparse import urlparse
     from urlparse import urlunparse
