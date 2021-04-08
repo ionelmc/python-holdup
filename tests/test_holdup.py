@@ -313,7 +313,7 @@ def test_pg_timeout(testdir, proto):
         proto + '://0.0.0.0/foo'
     )
     result.stderr.fnmatch_lines([
-        "holdup: Failed checks: 'postgresql://0.0.0.0/foo' (*",
+        "holdup: Failed checks: 'postgresql://0.0.0.0/foo' -> *",
     ])
 
 
