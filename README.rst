@@ -80,8 +80,12 @@ Example::
 
     docker run --rm ionelmc/holdup tcp://foobar:1234
 
-Note that this will have some limitation (executing the ``command`` is pretty
-pointless because holdup will run in its own container).
+Note that this will have some limitations:
+
+* executing the ``command`` is pretty pointless because holdup will run in its own container
+* you'll probably need extra network configuration to be able to access services
+* you won't be able to use `docker run` inside a container without exposing a docker daemon in said container
+
 
 Usage
 =====
