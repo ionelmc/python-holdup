@@ -25,6 +25,7 @@ import socket
 import ssl
 import sys
 from contextlib import closing
+from operator import methodcaller
 from time import sleep
 from time import time
 
@@ -57,20 +58,29 @@ except ImportError:
     from inspect import getargspec
 
 try:
+    from urllib.request import build_opener
+    from urllib.request import HTTPBasicAuthHandler
+    from urllib.request import HTTPDigestAuthHandler
+    from urllib.request import HTTPPasswordMgrWithDefaultRealm
+    from urllib.request import HTTPSHandler
     from urllib.request import urlopen
 except ImportError:
+    from urllib2 import build_opener
+    from urllib2 import HTTPBasicAuthHandler
+    from urllib2 import HTTPDigestAuthHandler
+    from urllib2 import HTTPPasswordMgrWithDefaultRealm
+    from urllib2 import HTTPSHandler
     from urllib2 import urlopen
+
+try:
+    from urllib.parse import urlparse, urlunparse
+except ImportError:
+    from urlparse import urlparse
+    from urlparse import urlunparse
 
 
 class Check(object):
     error = None
-    password_re = re.compile(r':[^@:]+@')
-
-    def str(self, strip_password=True):
-        if strip_password:
-            return self.password_re.sub(':******@', str(self.connection_string), 1)
-        else:
-            return str(self)
 
     def is_passing(self, options):
         try:
@@ -93,7 +103,17 @@ class Check(object):
             return 'PASSED'
 
     def __repr__(self):
-        return '{0} ({0.status})'.format(self)
+        return '{.__class__.__name__}({})'.format(self, repr(self.__dict__)[1:-1])
+
+    def display_definition(self, **kwargs):
+        raise NotImplementedError
+
+    def display(self, verbose, **kwargs):
+        definition = self.display_definition(**kwargs)
+        if verbose:
+            return '{!r} -> {.status}'.format(definition, self)
+        else:
+            return definition
 
 
 class TcpCheck(Check):
@@ -107,12 +127,18 @@ class TcpCheck(Check):
         with closing(sock):
             sock.connect((self.host, self.port))
 
-    def __str__(self):
-        return repr('tcp://{0.host}:{0.port}'.format(self))
+    def __repr__(self):
+        return 'TcpCheck(host={0.host!r}, port={0.port!r})'.format(self)
+
+    def display(self, verbose, **_):
+        definition = 'tcp://{0.host}:{0.port}'.format(self)
+        if verbose:
+            return '{!r} -> {.status}'.format(repr(definition), self)
+        else:
+            return definition
 
 
 class PgCheck(Check):
-
     def __init__(self, connection_string):
         self.connection_string = connection_string
         if '?' in connection_string.rsplit('/', 1)[1]:
@@ -128,18 +154,25 @@ class PgCheck(Check):
                 cur.execute('SELECT version()')
                 cur.fetchone()
 
-    def __str__(self):
-        return repr(self.password_re.sub(':******@', self.connection_string, 1))
+    def __repr__(self):
+        return 'PgCheck({0.connection_string})'.format(self)
+
+    def display_definition(self, credentials, _password_re=re.compile(r':[^@:]+@')):
+        definition = str(self.connection_string)
+        if not credentials:
+            definition = _password_re.sub(':******@', definition, 1)
+        return definition
 
 
 class HttpCheck(Check):
     def __init__(self, url):
         self.do_insecure = False
-        proto, urn = url.split('://', 1)
-        if proto == 'https+insecure':
+        url = urlparse(url)
+        self.scheme = url.scheme
+        if url.scheme == 'https+insecure':
             self.do_insecure = True
-            proto = 'https'
-        self.url = '{}://{}'.format(proto, urn)
+            url = url._replace(scheme='https')
+        self.url = url
 
     @staticmethod
     def can_create_default_context():
@@ -164,7 +197,7 @@ class HttpCheck(Check):
             return False
 
     def run(self, options):
-        kwargs = {}
+        handlers = []
         do_insecure = self.do_insecure
         if options.insecure:
             do_insecure = True
@@ -173,17 +206,38 @@ class HttpCheck(Check):
             if do_insecure:
                 ssl_ctx.check_hostname = False
                 ssl_ctx.verify_mode = ssl.CERT_NONE
-            kwargs = {'context': ssl_ctx}
+            handlers.append(HTTPSHandler(context=ssl_ctx))
         else:
             if do_insecure:
                 raise Exception('Insecure HTTPS is not supported with the current version of Python')
-        with closing(urlopen(self.url, timeout=options.check_timeout, **kwargs)) as req:
+
+        url = urlunparse(self.url._replace(netloc='{0.hostname}:{0.port}'.format(self.url)))
+
+        if self.url.username or self.url.password:
+            password_mgr = HTTPPasswordMgrWithDefaultRealm()
+            password_mgr.add_password(None, url, self.url.username, self.url.password)
+            handlers.append(HTTPDigestAuthHandler(passwd=password_mgr))
+            handlers.append(HTTPBasicAuthHandler(password_mgr=password_mgr))
+
+        opener = build_opener(*handlers)
+        print(repr(url))
+        with closing(opener.open(url, timeout=options.check_timeout)) as req:
             status = req.getcode()
             if status != 200:
                 raise Exception('Expected status code 200, got {!r}'.format(status))
 
-    def __str__(self):
-        return repr(self.url)
+    def __repr__(self):
+        return 'HttpCheck({0.url}, insecure={0.do_insecure}, status={0.status})'.format(self)
+
+    def display_definition(self, credentials):
+        url = self.url._replace(scheme=self.scheme)
+        if not credentials:
+            if not url.password:
+                mask = '******'
+            else:
+                mask = '{.username}:******'.format(url)
+            url = url._replace(netloc='{}@{}'.format(mask, url.hostname))
+        return urlunparse(url)
 
 
 class UnixCheck(Check):
@@ -196,8 +250,11 @@ class UnixCheck(Check):
         with closing(sock):
             sock.connect(self.path)
 
-    def __str__(self):
-        return repr('unix://{0.path}'.format(self))
+    def __repr__(self):
+        return 'UnixCheck({0.path!r}, status={0.status})'.format(self)
+
+    def display_definition(self, **_):
+        return 'unix://{0.path}'.format(self)
 
 
 class PathCheck(Check):
@@ -209,8 +266,11 @@ class PathCheck(Check):
         if not os.access(self.path, os.R_OK):
             raise Exception('Failed access({0.path!r}, R_OK) test'.format(self))
 
-    def __str__(self):
-        return repr('path://{0.path}'.format(self))
+    def __repr__(self):
+        return 'PathCheck({0.path!r}, status={0.status})'.format(self)
+
+    def display_definition(self, **_):
+        return 'path://{0.path}'.format(self)
 
 
 class EvalCheck(Check):
@@ -239,8 +299,11 @@ class EvalCheck(Check):
         if not result:
             raise Exception('Failed to evaluate {0.expr!r}. Result {1!r} is falsey'.format(self, result))
 
-    def __str__(self):
-        return repr('eval://{0.expr}'.format(self))
+    def __repr__(self):
+        return 'EvalCheck({0.expr!r}, ns={0.ns!r}, status={0.status})'.format(self)
+
+    def display_definition(self, **_):
+        return 'eval://{0.expr}'.format(self)
 
 
 class AnyCheck(Check):
@@ -255,10 +318,14 @@ class AnyCheck(Check):
             raise Exception('No checks passed')
 
     def __repr__(self):
-        return 'any({}) ({.status})'.format(', '.join(map(repr, self.checks)), self)
+        return 'AnyCheck({}, status={.status})'.format(', '.join(map(repr, self.checks)), self)
 
-    def __str__(self):
-        return 'any({})'.format(', '.join(map(str, self.checks)))
+    def display(self, verbose, **kwargs):
+        checks = ', '.join(map(methodcaller('display', verbose=verbose, **kwargs), self.checks))
+        if verbose:
+            return 'any({}) -> {.status}'.format(checks, self)
+        else:
+            return 'any({})'.format(checks)
 
 
 def parse_service(service):
@@ -347,7 +414,7 @@ parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='Verbose mode.')
 parser.add_argument('--verbose-passwords', action='store_true',
-                    help='Disable PostgreSQL password masking.')
+                    help='Disable PostgreSQL/HTTP password masking.')
 parser.add_argument('-n', '--no-abort', action='store_true',
                     help='Ignore failed services. '
                          'This makes `holdup` return 0 exit code regardless of services actually responding.')
@@ -385,9 +452,11 @@ def main():
         else:
             parser.error('--timeout value must be greater than --check-timeout value!')
     pending = list(options.service)
+    brief_representer = methodcaller('display', verbose=False, credentials=not options.verbose_passwords)
+    verbose_representer = methodcaller('display', verbose=True, credentials=not options.verbose_passwords)
     if options.verbose:
         print('holdup: Waiting for {0.timeout}s ({0.check_timeout}s per check, {0.interval}s sleep between loops) '
-              'for these services: {1}'.format(options, ', '.join(map(str, pending))))
+              'for these services: {1}'.format(options, ', '.join(map(brief_representer, pending))))
     start = time()
     at_least_once = True
     while at_least_once or pending and time() - start < options.timeout:
@@ -400,10 +469,11 @@ def main():
         if options.no_abort:
             print(
                 'holdup: Failed checks: {}. Treating as success because of --no-abort.'.format(
-                    ', '.join(map(repr, pending))),
+                    ', '.join(map(verbose_representer, pending))),
                 file=sys.stderr)
         else:
-            parser.exit(1, 'holdup: Failed checks: {}. Aborting!\n'.format(', '.join(map(repr, pending))))
+            parser.exit(1, 'holdup: Failed checks: {}. Aborting!\n'.format(
+                ', '.join(map(verbose_representer, pending))))
     if command:
         if options.verbose:
             print('holdup: Executing: {}'.format(' '.join(map(quote, command))))
