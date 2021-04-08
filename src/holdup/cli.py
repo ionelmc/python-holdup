@@ -220,7 +220,7 @@ class HttpCheck(Check):
             return False
 
     def run(self, options):
-        handlers = []
+        handlers = list(self.handlers)
         insecure = self.insecure
         if options.insecure:
             insecure = True
@@ -233,7 +233,7 @@ class HttpCheck(Check):
         elif insecure:
             raise Exception('Insecure HTTPS is not supported with the current version of Python')
 
-        opener = build_opener(*handlers, *self.handlers)
+        opener = build_opener(*handlers)
 
         with closing(opener.open(self.url, timeout=options.check_timeout)) as req:
             status = req.getcode()
