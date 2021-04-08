@@ -69,6 +69,10 @@ To install from PyPI::
 
     pip install holdup
 
+It has no dependencies except the optional PostgreSQL check support, which you'd install with::
+
+    pip install 'holdup[pg]'
+
 You can also install the in-development version with::
 
     pip install https://github.com/ionelmc/python-holdup/archive/master.zip
