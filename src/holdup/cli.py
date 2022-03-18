@@ -42,42 +42,15 @@ try:
 except ImportError:
     make_dsn = lambda value: value  # noqa
 
-try:
-    from pipes import quote
-except ImportError:
-    from shlex import quote
-
-try:
-    import builtins
-except ImportError:
-    import __builtin__ as builtins
-
-try:
-    from inspect import getfullargspec as getargspec
-except ImportError:
-    from inspect import getargspec
-
-try:
-    from urllib.request import HTTPBasicAuthHandler
-    from urllib.request import HTTPDigestAuthHandler
-    from urllib.request import HTTPPasswordMgrWithDefaultRealm
-    from urllib.request import HTTPSHandler
-    from urllib.request import build_opener
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import HTTPBasicAuthHandler
-    from urllib2 import HTTPDigestAuthHandler
-    from urllib2 import HTTPPasswordMgrWithDefaultRealm
-    from urllib2 import HTTPSHandler
-    from urllib2 import build_opener
-    from urllib2 import urlopen
-
-try:
-    from urllib.parse import urlparse
-    from urllib.parse import urlunparse
-except ImportError:
-    from urlparse import urlparse
-    from urlparse import urlunparse
+import builtins
+from pipes import quote
+from urllib.parse import urlparse
+from urllib.parse import urlunparse
+from urllib.request import HTTPBasicAuthHandler
+from urllib.request import HTTPDigestAuthHandler
+from urllib.request import HTTPPasswordMgrWithDefaultRealm
+from urllib.request import HTTPSHandler
+from urllib.request import build_opener
 
 
 class Check(object):
@@ -91,28 +64,31 @@ class Check(object):
         else:
             self.error = False
             if options.verbose:
-                print('holdup: Passed check: {}'.format(self.display(verbose=True, credentials=not options.verbose_passwords)))
+                print(f'holdup: Passed check: {self.display(verbose=True, verbose_passwords=options.verbose_passwords)}')
             return True
+
+    def run(self, options):
+        raise NotImplementedError
 
     @property
     def status(self):
         if self.error:
-            return '{.error}'.format(self)
+            return f'{self.error}'
         elif self.error is None:
             return 'PENDING'
         else:
             return 'PASSED'
 
     def __repr__(self):
-        return '{.__class__.__name__}({})'.format(self, repr(self.__dict__)[1:-1])
+        return f'{self.__class__.__name__}({repr(self.__dict__)[1:-1]})'
 
     def display_definition(self, **kwargs):
         raise NotImplementedError
 
-    def display(self, verbose, **kwargs):
+    def display(self, *, verbose, **kwargs):
         definition = self.display_definition(**kwargs)
         if verbose:
-            return '{!r} -> {.status}'.format(definition, self)
+            return f'{definition!r} -> {self.status}'
         else:
             return definition
 
@@ -129,12 +105,12 @@ class TcpCheck(Check):
             sock.connect((self.host, self.port))
 
     def __repr__(self):
-        return 'TcpCheck(host={0.host!r}, port={0.port!r})'.format(self)
+        return f'TcpCheck(host={self.host!r}, port={self.port!r})'
 
-    def display(self, verbose, **_):
-        definition = 'tcp://{0.host}:{0.port}'.format(self)
+    def display(self, *, verbose, **_):
+        definition = f'tcp://{self.host}:{self.port}'
         if verbose:
-            return '{!r} -> {.status}'.format(definition, self)
+            return f'{definition!r} -> {self.status}'
         else:
             return definition
 
@@ -148,19 +124,19 @@ class PgCheck(Check):
             self.separator = '?'
 
     def run(self, options):
-        with closing(psycopg2.connect('{}{}connect_timeout={}'.format(
-            self.connection_string, self.separator, max(1, int(options.check_timeout))
-        ))) as conn:
+        with closing(
+            psycopg2.connect(f'{self.connection_string}{self.separator}connect_timeout={max(1, int(options.check_timeout))}')
+        ) as conn:
             with closing(conn.cursor()) as cur:
                 cur.execute('SELECT version()')
                 cur.fetchone()
 
     def __repr__(self):
-        return 'PgCheck({0.connection_string})'.format(self)
+        return f'PgCheck({self.connection_string})'
 
-    def display_definition(self, credentials, _password_re=re.compile(r':[^@:]+@')):
+    def display_definition(self, *, verbose_passwords, _password_re=re.compile(r':[^@:]+@')):
         definition = str(self.connection_string)
-        if not credentials:
+        if not verbose_passwords:
             definition = _password_re.sub(':******@', definition, 1)
         return definition
 
@@ -176,7 +152,7 @@ class HttpCheck(Check):
             url = url._replace(scheme='https')
 
         if url.port:
-            self.netloc = '{0.hostname}:{0.port}'.format(url)
+            self.netloc = f'{self.hostname}:{self.port}'
         else:
             self.netloc = url.hostname
 
@@ -190,58 +166,34 @@ class HttpCheck(Check):
 
         self.url = cleaned_url
 
-    @staticmethod
-    def can_create_default_context():
-        """
-            Check if the current python version supports
-                * ssl.create_default_context()
-                * 'context' kwargs for urlopen
-            Supported Python versions are:
-                * >2.7.9
-                * >3.4.3
-        """
-        if hasattr(ssl, 'create_default_context'):
-            urlopen_argspec = getargspec(urlopen)
-            urlopen_args = urlopen_argspec.args
-            if hasattr(urlopen_argspec, 'kwonlyargs'):
-                urlopen_args.extend(urlopen_argspec.kwonlyargs)
-            if 'context' in urlopen_args:
-                return True
-            else:
-                return False
-        else:
-            return False
-
     def run(self, options):
         handlers = list(self.handlers)
         insecure = self.insecure or options.insecure
-        if self.can_create_default_context():
-            ssl_ctx = ssl.create_default_context()
-            if insecure:
-                ssl_ctx.check_hostname = False
-                ssl_ctx.verify_mode = ssl.CERT_NONE
-            handlers.append(HTTPSHandler(context=ssl_ctx))
-        elif insecure:
-            raise Exception('Insecure HTTPS is not supported with the current version of Python')
+
+        ssl_ctx = ssl.create_default_context()
+        if insecure:
+            ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl.CERT_NONE
+        handlers.append(HTTPSHandler(context=ssl_ctx))
 
         opener = build_opener(*handlers)
 
         with closing(opener.open(self.url, timeout=options.check_timeout)) as req:
             status = req.getcode()
             if status != 200:
-                raise Exception('Expected status code 200, got {!r}'.format(status))
+                raise Exception(f'Expected status code 200, got {status!r}')
 
     def __repr__(self):
-        return 'HttpCheck({0.url}, insecure={0.do_insecure}, status={0.status})'.format(self)
+        return f'HttpCheck({self.url}, insecure={self.do_insecure}, status={self.status})'
 
-    def display_definition(self, credentials):
+    def display_definition(self, *, verbose_passwords):
         url = self.parsed_url
-        if not credentials:
+        if not verbose_passwords:
             if not url.password:
                 mask = '******'
             else:
-                mask = '{.username}:******'.format(url)
-            url = url._replace(netloc='{}@{}'.format(mask, self.netloc))
+                mask = f'{url.username}:******'
+            url = url._replace(netloc=f'{mask}@{self.netloc}')
         return urlunparse(url)
 
 
@@ -256,10 +208,10 @@ class UnixCheck(Check):
             sock.connect(self.path)
 
     def __repr__(self):
-        return 'UnixCheck({0.path!r}, status={0.status})'.format(self)
+        return f'UnixCheck({self.path!r}, status={self.status})'
 
     def display_definition(self, **_):
-        return 'unix://{0.path}'.format(self)
+        return f'unix://{self.path}'
 
 
 class PathCheck(Check):
@@ -269,13 +221,13 @@ class PathCheck(Check):
     def run(self, _):
         os.stat(self.path)
         if not os.access(self.path, os.R_OK):
-            raise Exception('Failed access({0.path!r}, R_OK) test'.format(self))
+            raise Exception(f'Failed access({self.path!r}, R_OK) test')
 
     def __repr__(self):
-        return 'PathCheck({0.path!r}, status={0.status})'.format(self)
+        return f'PathCheck({self.path!r}, status={self.status})'
 
     def display_definition(self, **_):
-        return 'path://{0.path}'.format(self)
+        return f'path://{self.path}'
 
 
 class EvalCheck(Check):
@@ -285,30 +237,26 @@ class EvalCheck(Check):
         try:
             tree = ast.parse(expr)
         except SyntaxError as exc:
-            raise argparse.ArgumentTypeError(
-                'Invalid service spec {0!r}. Parse error:\n'
-                '  {1.text} {2}^\n'
-                '{1}'.format(expr, exc, ' ' * exc.offset))
+            raise argparse.ArgumentTypeError(f'Invalid service spec {expr!r}. Parse error:\n  {exc.text} {" " * exc.offset}^\n{exc}')
         for node in ast.walk(tree):
             if isinstance(node, ast.Name):
                 if not hasattr(builtins, node.id):
                     try:
                         __import__(node.id)
                     except ImportError as exc:
-                        raise argparse.ArgumentTypeError(
-                            'Invalid service spec {!r}. Import error: {}'.format(expr, exc))
+                        raise argparse.ArgumentTypeError(f'Invalid service spec {expr!r}. Import error: {exc}')
                     self.ns[node.id] = sys.modules[node.id]
 
     def run(self, _):
         result = eval(self.expr, dict(self.ns), dict(self.ns))
         if not result:
-            raise Exception('Failed to evaluate {0.expr!r}. Result {1!r} is falsey'.format(self, result))
+            raise Exception(f'Failed to evaluate {self.expr!r}. Result {result!r} is falsey')
 
     def __repr__(self):
-        return 'EvalCheck({0.expr!r}, ns={0.ns!r}, status={0.status})'.format(self)
+        return f'EvalCheck({self.expr!r}, ns={self.ns!r}, status={self.status})'
 
     def display_definition(self, **_):
-        return 'eval://{0.expr}'.format(self)
+        return f'eval://{self.expr}'
 
 
 class AnyCheck(Check):
@@ -323,19 +271,19 @@ class AnyCheck(Check):
             raise Exception('ALL FAILED')
 
     def __repr__(self):
-        return 'AnyCheck({}, status={.status})'.format(', '.join(map(repr, self.checks)), self)
+        return f'AnyCheck({", ".join(map(repr, self.checks))}, status={self.status})'
 
-    def display(self, verbose, **kwargs):
+    def display(self, *, verbose, **kwargs):
         checks = ', '.join(map(methodcaller('display', verbose=verbose, **kwargs), self.checks))
         if verbose:
-            return 'any({}) -> {.status}'.format(checks, self)
+            return f'any({checks}) -> {self.status}'
         else:
-            return 'any({})'.format(checks)
+            return f'any({checks})'
 
 
 def parse_service(service):
     if '://' not in service:
-        raise argparse.ArgumentTypeError('Invalid service spec {!r}. Must have "://".'.format(service))
+        raise argparse.ArgumentTypeError(f'Invalid service spec {service!r}. Must have "://".')
     proto, value = service.split('://', 1)
 
     if ',' in value and proto != 'eval':
@@ -343,7 +291,7 @@ def parse_service(service):
         for pos, part in enumerate(parts):
             if part.startswith('eval://'):
                 parts[pos] = ','.join(parts[pos:])
-                del parts[pos + 1:]
+                del parts[pos + 1 :]
                 break
         return AnyCheck([parse_value(part, proto) for part in parts])
     else:
@@ -353,28 +301,25 @@ def parse_service(service):
 def parse_value(value, proto):
     if '://' in value:
         proto, value = value.split('://', 1)
-    display_value = '{}://{}'.format(proto, value)
+    display_value = f'{proto}://{value}'
 
     if proto == 'tcp':
         if ':' not in value:
-            raise argparse.ArgumentTypeError(
-                'Invalid service spec {!r}. Must have ":". Where\'s the port?'.format(display_value))
+            raise argparse.ArgumentTypeError(f'Invalid service spec {display_value!r}. Must have ":". Where\'s the port?')
         host, port = value.strip('/').split(':', 1)
         if not port.isdigit():
-            raise argparse.ArgumentTypeError(
-                'Invalid service spec {!r}. Port must be a number not {!r}.'.format(display_value, port))
+            raise argparse.ArgumentTypeError(f'Invalid service spec {display_value!r}. Port must be a number not {port!r}.')
         port = int(port)
         return TcpCheck(host, port)
     elif proto in ('pg', 'postgresql', 'postgres'):
         if psycopg2 is None:
-            raise argparse.ArgumentTypeError('Protocol {} unusable. Install holdup[pg].'.format(proto))
+            raise argparse.ArgumentTypeError(f'Protocol {proto} unusable. Install holdup[pg].')
 
-        uri = 'postgresql://{}'.format(value)
+        uri = f'postgresql://{value}'
         try:
             connection_uri = make_dsn(uri)
         except Exception as exc:
-            raise argparse.ArgumentTypeError(
-                'Failed to parse %r: %s. Must be a valid connection URI.' % (display_value, exc))
+            raise argparse.ArgumentTypeError(f'Failed to parse {display_value!r}: {exc}. Must be a valid connection URI.')
         return PgCheck(connection_uri)
     elif proto == 'unix':
         return UnixCheck(value)
@@ -385,53 +330,59 @@ def parse_value(value, proto):
     elif proto == 'eval':
         return EvalCheck(value)
     else:
-        raise argparse.ArgumentTypeError(
-            'Unknown protocol {!r} in {!r}. Must be "tcp", "path", "unix" or "pg".'.format(proto, display_value))
+        raise argparse.ArgumentTypeError(f'Unknown protocol {proto!r} in {display_value!r}. Must be "tcp", "path", "unix" or "pg".')
 
 
 parser = argparse.ArgumentParser(
-    usage='%(prog)s [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] '
-          '[-- command [arg [arg ...]]]',
+    usage='%(prog)s [-h] [-t SECONDS] [-T SECONDS] [-i SECONDS] [-n] service [service ...] ' '[-- command [arg [arg ...]]]',
     description='Wait for services to be ready and optionally exec command.',
 )
-parser.add_argument('service', nargs=argparse.ONE_OR_MORE, type=parse_service,
-                    help='A service to wait for. '
-                         'Supported protocols: '
-                         '"tcp://host:port/", '
-                         '"path:///path/to/something", '
-                         '"unix:///path/to/domain.sock", '
-                         '"eval://expr", '
-                         '"pg://user:password@host:port/dbname" ("postgres" and "postgresql" also allowed), '
-                         '"http://urn", '
-                         '"https://urn", '
-                         '"https+insecure://urn" (status 200 expected for http*). '
-                         'Join protocols with a comma to make holdup exit at the first '
-                         'passing one, eg: "tcp://host:1,host:2" or "tcp://host:1,tcp://host:2" are equivalent and mean '
-                         '`any that pass`.')
-parser.add_argument('command', nargs=argparse.OPTIONAL,
-                    help='An optional command to exec.')
-parser.add_argument('-t', '--timeout', metavar='SECONDS', type=float, default=60.0,
-                    help='Time to wait for services to be ready. Default: %(default)s')
-parser.add_argument('-T', '--check-timeout', metavar='SECONDS', type=float, default=1.0,
-                    help='Time to wait for a single check. Default: %(default)s')
-parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=.2,
-                    help='How often to check. Default: %(default)s')
-parser.add_argument('-v', '--verbose', action='store_true',
-                    help='Verbose mode.')
-parser.add_argument('--verbose-passwords', action='store_true',
-                    help='Disable PostgreSQL/HTTP password masking.')
-parser.add_argument('-n', '--no-abort', action='store_true',
-                    help='Ignore failed services. '
-                         'This makes `holdup` return 0 exit code regardless of services actually responding.')
-parser.add_argument('--insecure', action='store_true',
-                    help='Disable SSL Certificate verification for HTTPS services.')
+parser.add_argument(
+    'service',
+    nargs=argparse.ONE_OR_MORE,
+    type=parse_service,
+    help='A service to wait for. '
+    'Supported protocols: '
+    '"tcp://host:port/", '
+    '"path:///path/to/something", '
+    '"unix:///path/to/domain.sock", '
+    '"eval://expr", '
+    '"pg://user:password@host:port/dbname" ("postgres" and "postgresql" also allowed), '
+    '"http://urn", '
+    '"https://urn", '
+    '"https+insecure://urn" (status 200 expected for http*). '
+    'Join protocols with a comma to make holdup exit at the first '
+    'passing one, eg: "tcp://host:1,host:2" or "tcp://host:1,tcp://host:2" are equivalent and mean '
+    '`any that pass`.',
+)
+parser.add_argument('command', nargs=argparse.OPTIONAL, help='An optional command to exec.')
+parser.add_argument(
+    '-t', '--timeout', metavar='SECONDS', type=float, default=60.0, help='Time to wait for services to be ready. Default: %(default)s'
+)
+parser.add_argument(
+    '-T', '--check-timeout', metavar='SECONDS', type=float, default=1.0, help='Time to wait for a single check. Default: %(default)s'
+)
+parser.add_argument('-i', '--interval', metavar='SECONDS', type=float, default=0.2, help='How often to check. Default: %(default)s')
+parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode.')
+parser.add_argument('--verbose-passwords', action='store_true', help='Disable PostgreSQL/HTTP password masking.')
+parser.add_argument(
+    '-n',
+    '--no-abort',
+    action='store_true',
+    help='Ignore failed services. ' 'This makes `holdup` return 0 exit code regardless of services actually responding.',
+)
+parser.add_argument('--insecure', action='store_true', help='Disable SSL Certificate verification for HTTPS services.')
 
 
 def add_version_argument(parser):
     import holdup
-    parser.add_argument('--version', action='version',
-                        version="%(prog)s {} from {}".format(holdup.__version__, holdup.__file__),
-                        help="display the version of the holdup package and its location, then exit.")
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f"%(prog)s {holdup.__version__} from {holdup.__file__}",
+        help="display the version of the holdup package and its location, then exit.",
+    )
 
 
 def main():
@@ -447,7 +398,7 @@ def main():
     add_version_argument(parser)
     if '--' in sys.argv:
         pos = sys.argv.index('--')
-        argv, command = sys.argv[1:pos], sys.argv[pos + 1:]
+        argv, command = sys.argv[1:pos], sys.argv[pos + 1 :]
     else:
         argv, command = sys.argv[1:], None
     options = parser.parse_args(args=argv)
@@ -457,11 +408,13 @@ def main():
         else:
             parser.error('--timeout value must be greater than --check-timeout value!')
     pending = list(options.service)
-    brief_representer = methodcaller('display', verbose=False, credentials=not options.verbose_passwords)
-    verbose_representer = methodcaller('display', verbose=True, credentials=not options.verbose_passwords)
+    brief_representer = methodcaller('display', verbose=False, verbose_passwords=options.verbose_passwords)
+    verbose_representer = methodcaller('display', verbose=True, verbose_passwords=options.verbose_passwords)
     if options.verbose:
-        print('holdup: Waiting for {0.timeout}s ({0.check_timeout}s per check, {0.interval}s sleep between loops) '
-              'for these services: {1}'.format(options, ', '.join(map(brief_representer, pending))))
+        print(
+            f'holdup: Waiting for {options.timeout}s ({options.check_timeout}s per check, {options.interval}s sleep between loops) '
+            f'for these services: {", ".join(map(brief_representer, pending))}'
+        )
     start = time()
     at_least_once = True
     while at_least_once or pending and time() - start < options.timeout:
@@ -473,13 +426,12 @@ def main():
     if pending:
         if options.no_abort:
             print(
-                'holdup: Failed checks: {}. Treating as success because of --no-abort.'.format(
-                    ', '.join(map(verbose_representer, pending))),
-                file=sys.stderr)
+                f'holdup: Failed checks: {", ".join(map(verbose_representer, pending))}. Treating as success because of --no-abort.',
+                file=sys.stderr,
+            )
         else:
-            parser.exit(1, 'holdup: Failed checks: {}. Aborting!\n'.format(
-                ', '.join(map(verbose_representer, pending))))
+            parser.exit(1, f'holdup: Failed checks: {", ".join(map(verbose_representer, pending))}. Aborting!\n')
     if command:
         if options.verbose:
-            print('holdup: Executing: {}'.format(' '.join(map(quote, command))))
+            print(f'holdup: Executing: {" ".join(map(quote, command))}')
         os.execvp(command[0], command)
