@@ -10,18 +10,18 @@ Overview
     * - docs
       - |docs|
     * - tests
-      - | |travis| |requires|
+      - | |github-actions| |requires|
         | |coveralls|
     * - package
       - | |version| |wheel| |supported-versions| |supported-implementations|
         | |commits-since|
 .. |docs| image:: https://readthedocs.org/projects/python-holdup/badge/?style=flat
-    :target: https://readthedocs.org/projects/python-holdup
+    :target: https://python-holdup.readthedocs.io/
     :alt: Documentation Status
 
-.. |travis| image:: https://api.travis-ci.com/ionelmc/python-holdup.svg?branch=master
-    :alt: Travis-CI Build Status
-    :target: https://travis-ci.com/github/ionelmc/python-holdup
+.. |github-actions| image:: https://github.com/ionelmc/python-holdup/actions/workflows/github-actions.yml/badge.svg
+    :alt: GitHub Actions Build Status
+    :target: https://github.com/ionelmc/python-holdup/actions
 
 .. |requires| image:: https://requires.io/github/ionelmc/python-holdup/requirements.svg?branch=master
     :alt: Requirements Status
@@ -49,7 +49,7 @@ Overview
 
 .. |commits-since| image:: https://img.shields.io/github/commits-since/ionelmc/python-holdup/v2.0.0.svg
     :alt: Commits since latest release
-    :target: https://github.com/ionelmc/python-holdup/compare/v1.8.1...master
+    :target: https://github.com/ionelmc/python-holdup/compare/v2.0.0...master
 
 
 

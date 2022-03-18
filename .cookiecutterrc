@@ -16,22 +16,24 @@ default_context:
     command_line_interface: argparse
     command_line_interface_bin_name: holdup
     coveralls: yes
-    coveralls_token: '[Required for Appveyor, take it from https://coveralls.io/github/ionelmc/python-holdup]'
     distribution_name: holdup
     email: contact@ionelmc.ro
     full_name: Ionel Cristian Mărieș
-    legacy_python: yes
+    github_actions: yes
+    legacy_python: no
     license: BSD 2-Clause License
     linter: flake8
     package_name: holdup
     pre_commit: yes
+    pre_commit_formatter: black
     project_name: Holdup
     project_short_description: A tool to wait for services and execute command. Useful for Docker containers that depend on slow to start services (like almost everything).
     pypi_badge: yes
     pypi_disable_upload: no
-    release_date: '2020-12-16'
+    release_date: '2021-04-08'
     repo_hosting: github.com
     repo_hosting_domain: github.com
+    repo_main_branch: master
     repo_name: python-holdup
     repo_username: ionelmc
     requiresio: yes
@@ -45,9 +47,10 @@ default_context:
     test_matrix_configurator: no
     test_matrix_separate_coverage: no
     test_runner: pytest
-    travis: yes
+    travis: no
     travis_osx: no
-    version: 1.8.1
+    version: 2.0.0
+    version_manager: bump2version
     website: https://blog.ionelmc.ro
     year_from: '2016'
-    year_to: '2021'
+    year_to: '2022'
