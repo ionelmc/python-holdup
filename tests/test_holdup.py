@@ -1,32 +1,11 @@
 import os
 import socket
-import ssl
 import threading
 from distutils import spawn
 
 import pytest
 
-try:
-    from inspect import getfullargspec as getargspec
-except ImportError:
-    from inspect import getargspec
-
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
-
 pytest_plugins = ('pytester',)
-
-
-def has_urlopen_ssl_context():
-    if hasattr(ssl, 'create_default_context'):
-        urlopen_argspec = getargspec(urlopen)
-        urlopen_args = urlopen_argspec.args
-        if hasattr(urlopen_argspec, 'kwonlyargs'):
-            urlopen_args.extend(urlopen_argspec.kwonlyargs)
-        if 'context' in urlopen_args:
-            return True
 
 
 def has_docker():
@@ -81,13 +60,11 @@ def test_http_auth(testdir, extra, auth, proto):
         result.stdout.fnmatch_lines(['success !'])
 
 
-@pytest.mark.skipif('not has_urlopen_ssl_context()')
 def test_http_insecure_with_option(testdir):
     result = testdir.run('holdup', '-t', '2', '--insecure', 'https://self-signed.badssl.com/')
     assert result.ret == 0
 
 
-@pytest.mark.skipif('not has_urlopen_ssl_context()')
 def test_http_insecure_with_proto(testdir):
     result = testdir.run('holdup', '-t', '2', 'https+insecure://self-signed.badssl.com/')
     assert result.ret == 0
