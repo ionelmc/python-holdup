@@ -351,14 +351,14 @@ def test_func_pg(testdir2):
 
 
 @pytest.mark.skipif("not has_docker()")
-@pytest.mark.xfail(reason="not reliable on travis")
 def test_func_pg_tcp_service_failure(testdir2):
+    # test that the tcp check is worse than the pg check
     result = testdir2.run(
         './test_pg.sh',
         'holdup', 'tcp://pg:5432',
-        '-T', '0.01',
+        '-T', '0.001',
         '-i', '0',
-        '-t', '10',
+        '-t', '1',
         '-v',
         '--',
     )
