@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.2.1
-
 FROM alpine:latest as dist
+
 RUN apk add --no-cache --virtual build-deps gcc python3-dev musl-dev py3-pip py3-wheel postgresql-dev
 RUN mkdir -p /build/dist
 WORKDIR /build
