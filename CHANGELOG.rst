@@ -25,7 +25,7 @@ Changelog
 ------------------
 
 * Added a PostgreSQL check. It handles the ``the database system is starting up`` problem.
-  Contributed by Dan Ailenei in `#6 <https://github.com/ionelmc/python-holdup/pull/6>`_.
+  Contributed by Dan Ailenei in :pr:`6`.
 * Changed output so it's more clear and more brief:
 
   * arguments (checks) are quoted when printed,
@@ -38,7 +38,7 @@ Changelog
 
 * Added support for skipping SSL certificate verification for HTTPS services
   (the ``--insecure`` option and ``https+insecure`` protocol).
-  Contributed by Mithun Ayachit in `#2 <https://github.com/ionelmc/python-holdup/pull/2>`_.
+  Contributed by Mithun Ayachit in :pr:`2`.
 
 1.6.0 (2018-03-22)
 ------------------
