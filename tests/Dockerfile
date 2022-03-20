@@ -1,46 +1,57 @@
-FROM buildpack-deps:bionic AS deps
+# syntax=docker/dockerfile:1
+FROM buildpack-deps:20.04-scm AS deps
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-                    python3-dev curl wget ca-certificates \
- && echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main 10' > /etc/apt/sources.list.d/pgdg.list \
- && curl -fsSL 'https://www.postgresql.org/media/keys/ACCC4CF8.asc' | apt-key add - \
+ENV TZ=UTC
+# DEBIAN_FRONTEND=noninteractive exists to prevent tzdata going nuts.
+# Maybe dpkg incorrectly detects interactive on buildkit containers?
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main 10" > /etc/apt/sources.list.d/pgdg.list \
+ && curl -fsSL11 'https://www.postgresql.org/media/keys/ACCC4CF8.asc' | apt-key add - \
  && apt-get update \
- && apt-get install -y --no-install-recommends 'libpq-dev' \
- && rm -rf /var/lib/apt/lists/*
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3-dev python3-distutils-extra \
+        libpq-dev=10.* libpq5=10.* \
+        build-essential git sudo ca-certificates
+# Avoid having to use python3 all over the place.
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 
-RUN bash -o pipefail -c "curl -fsSL 'https://bootstrap.pypa.io/get-pip.py' | python3 - --no-cache-dir --upgrade pip==19.1.1"
+RUN bash -o pipefail -c "curl -fsSL 'https://bootstrap.pypa.io/get-pip.py' | \
+    python - --no-cache --disable-pip-version-check --upgrade pip setuptools"
 
 RUN mkdir /wheels \
- && pip wheel --no-cache --wheel-dir=/wheels psycopg2==2.8.2
+ && pip wheel --no-cache --wheel-dir=/wheels psycopg2
 
+#################
+#################
+FROM ubuntu:20.04
+#################
+RUN test -e /etc/apt/apt.conf.d/docker-clean # sanity check
 
-########################################################################################################################
-FROM ubuntu:bionic
-########################################################################################################################
-
+ENV TZ=UTC
 RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-                    locales software-properties-common \
-                    curl wget ca-certificates gpg-agent \
-                    strace gdb lsof locate net-tools htop iputils-ping dnsutils \
-                    python3 python3-distutils \
-                    python3-dbg libpython3-dbg \
-                    nano vim tree less telnet socat \
- && echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main 10' > /etc/apt/sources.list.d/pgdg.list \
- && curl -fsSL 'https://www.postgresql.org/media/keys/ACCC4CF8.asc' | apt-key add - \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        curl software-properties-common gpg-agent \
+ && echo "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main 10" > /etc/apt/sources.list.d/pgdg.list \
+ && curl -fsSL11 'https://www.postgresql.org/media/keys/ACCC4CF8.asc' | apt-key add - \
  && apt-get update \
- && apt-get install -y --no-install-recommends \
-                    libpq5 postgresql-client-10 \
- && rm -rf /var/lib/apt/lists/*
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        strace gdb lsof locate net-tools htop iputils-ping dnsutils \
+        nano vim tree less telnet \
+        redis-tools \
+        socat \
+        graphviz \
+        dumb-init \
+        libpq5=10.* postgresql-client-10 \
+        python3-dbg python3-distutils python3-distutils-extra \
+        libmemcached11 \
+        sudo ca-certificates \
+        gdal-bin python3-gdal
+# Avoid having to use python3 all over the place.
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-RUN locale-gen en_US.UTF-8
-
-ENV TERM=xterm
-RUN bash -o pipefail -c "curl -fsSL 'https://bootstrap.pypa.io/get-pip.py' | python3 - --no-cache-dir --upgrade pip==19.1.1"
+# Adds a new user named python and add it to the list of sudoers. Will be able to call sudo without the password.
+# This is more geared to development (eg: match user's UID) than production (where you shouln't need any sudo/home).
+RUN bash -o pipefail -c "curl -fsSL 'https://bootstrap.pypa.io/get-pip.py' | \
+    python - --no-cache --disable-pip-version-check --upgrade pip==22.0.3 setuptools==60.9.3"
 
 RUN mkdir /deps
 COPY --from=deps /wheels/* /deps/

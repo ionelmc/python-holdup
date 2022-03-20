@@ -1,7 +1,7 @@
 #!/bin/bash -eux
 
 docker-compose --ansi=never down || true
-docker-compose --ansi=never build
+docker-compose --ansi=never build --pull
 
 trap "docker-compose --ansi=never down" EXIT
 
