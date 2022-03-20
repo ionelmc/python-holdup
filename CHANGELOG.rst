@@ -2,6 +2,12 @@
 Changelog
 =========
 
+3.0.0 (2022-03-20)
+------------------
+
+* Dropped support for Python 2.
+* Fixed bugs with password masking (it wasn't working for postgresql URIs).
+
 2.0.0 (2021-04-08)
 ------------------
 
