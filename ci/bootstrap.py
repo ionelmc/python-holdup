@@ -35,7 +35,7 @@ def exec_in_env():
         check_call([bin_path / "pip", "install", "jinja2", "tox"])
     python_executable = bin_path / "python"
     if not python_executable.exists():
-        python_executable = python_executable.with_suffix('.exe')
+        python_executable = python_executable.with_suffix(".exe")
 
     print("Re-executing with: {0}".format(python_executable))
     print("+ exec", python_executable, __file__, "--no-env")
@@ -61,11 +61,11 @@ def main():
         # This uses sys.executable the same way that the call in
         # cookiecutter-pylibrary/hooks/post_gen_project.py
         # invokes this bootstrap.py itself.
-        for line in subprocess.check_output([sys.executable, '-m', 'tox', '--listenvs'], universal_newlines=True).splitlines()
+        for line in subprocess.check_output([sys.executable, "-m", "tox", "--listenvs"], universal_newlines=True).splitlines()
     ]
-    tox_environments = [line for line in tox_environments if line.startswith('py')]
+    tox_environments = [line for line in tox_environments if line.startswith("py")]
 
-    for template in templates_path.rglob('*'):
+    for template in templates_path.rglob("*"):
         if template.is_file():
             template_path = str(template.relative_to(templates_path))
             destination = base_path / template_path
