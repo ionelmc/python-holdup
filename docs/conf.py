@@ -18,7 +18,7 @@ project = "Holdup"
 year = "2016-2023"
 author = "Ionel Cristian Mărieș"
 copyright = "{0}, {1}".format(year, author)
-version = release = "3.0.0"
+version = release = "4.0.0"
 
 pygments_style = "trac"
 templates_path = ["."]
