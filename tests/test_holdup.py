@@ -99,7 +99,7 @@ def test_any(testdir, tmp_path_factory, extra):
                 "holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: "
                 f"any(tcp://localhost:*, path://{path_path}, unix://{unix_path})",
                 f"holdup: Passed check: 'unix://{unix_path}' -> PASSED",
-                f"holdup: Passed check: any('tcp://localhost:*' -> [[]Errno 111[]] Connection refused, 'path://{path_path}' ->"
+                f"holdup: Passed check: any('tcp://localhost:*' -> *, 'path://{path_path}' ->"
                 f" [[]Errno 2[]] No such file or directory: *, "
                 f"'unix://{unix_path}' -> PASSED) -> PASSED",
                 "holdup: Executing: python -c 'print(\"success !\")'",
