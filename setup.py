@@ -49,11 +49,11 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         # uncomment if you test on these interpreters:
@@ -68,13 +68,12 @@ setup(
         'Issue Tracker': 'https://github.com/ionelmc/python-holdup/issues',
     },
     keywords=['wait', 'port', 'service', 'docker', 'unix', 'domain', 'socket', 'tcp', 'waiter', 'holdup', 'hold-up'],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
     ],
     extras_require={
-        'pg:platform_python_implementation=="PyPy"': ['psycopg2cffi'],
-        'pg:platform_python_implementation=="CPython"': ['psycopg2'],
+        'pg': ['psycopg'],
     },
     entry_points={
         'console_scripts': [

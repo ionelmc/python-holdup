@@ -15,8 +15,6 @@ Why does this file exist, and why not put this in __main__?
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
 
-from __future__ import print_function
-
 import argparse
 import ast
 import os
@@ -30,17 +28,22 @@ from time import sleep
 from time import time
 
 try:
-    import psycopg2
+    import psycopg
 except ImportError:
     try:
-        import psycopg2cffi as psycopg2
+        import psycopg2 as psycopg
     except ImportError:
-        psycopg2 = None
-
+        try:
+            import psycopg2cffi as psycopg
+        except ImportError:
+            psycopg = None
 try:
-    from psycopg2.extensions import make_dsn
+    from psycopg.conninfo import make_conninfo
 except ImportError:
-    make_dsn = lambda value: value  # noqa
+    try:
+        from psycopg2.extensions import make_dsn as make_conninfo
+    except ImportError:
+        make_conninfo = lambda value: value  # noqa
 
 import builtins
 from pipes import quote
@@ -125,7 +128,7 @@ class PgCheck(Check):
 
     def run(self, options):
         with closing(
-            psycopg2.connect(f'{self.connection_string}{self.separator}connect_timeout={max(1, int(options.check_timeout))}')
+            psycopg.connect(f'{self.connection_string}{self.separator}connect_timeout={max(1, int(options.check_timeout))}')
         ) as conn:
             with closing(conn.cursor()) as cur:
                 cur.execute('SELECT version()')
@@ -312,12 +315,12 @@ def parse_value(value, proto):
         port = int(port)
         return TcpCheck(host, port)
     elif proto in ('pg', 'postgresql', 'postgres'):
-        if psycopg2 is None:
+        if psycopg is None:
             raise argparse.ArgumentTypeError(f'Protocol {proto} unusable. Install holdup[pg].')
 
         uri = f'postgresql://{value}'
         try:
-            connection_uri = make_dsn(uri)
+            connection_uri = make_conninfo(uri)
         except Exception as exc:
             raise argparse.ArgumentTypeError(f'Failed to parse {display_value!r}: {exc}. Must be a valid connection URI.')
         return PgCheck(connection_uri)

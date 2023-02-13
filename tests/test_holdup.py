@@ -22,23 +22,29 @@ def test_normal(testdir, extra):
     tcp.bind(('127.0.0.1', 0))
     tcp.listen(1)
     _, port = tcp.getsockname()
-    t = threading.Thread(target=tcp.accept)
+
+    def accept():
+        conn, _ = tcp.accept()
+        conn.close()
+
+    t = threading.Thread(target=accept)
     t.start()
 
     uds = socket.socket(socket.AF_UNIX)
-    if os.path.exists('/tmp/holdup-test.sock'):
-        os.unlink('/tmp/holdup-test.sock')
-    with open('/tmp/holdup-test', 'w'):
+
+    unix_path = str(testdir.tmpdir.join('holdup-test.sock'))
+    path_path = str(testdir.tmpdir.join('holdup-test'))
+    with open(path_path, 'w'):
         pass
-    uds.bind('/tmp/holdup-test.sock')
+    uds.bind(unix_path)
     uds.listen(1)
-    result = testdir.run(
-        'holdup', '-t', '0.5', 'tcp://localhost:%s/' % port, 'path:///tmp/holdup-test', 'unix:///tmp/holdup-test.sock', *extra
-    )
+    result = testdir.run('holdup', '-t', '0.5', f'tcp://localhost:{port}/', f'path://{path_path}', f'unix://{unix_path}', *extra)
     if extra:
         result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0
     t.join()
+    uds.close()
+    tcp.close()
 
 
 @pytest.mark.parametrize('status', [200, 404])
@@ -96,6 +102,8 @@ def test_any(testdir, extra):
             ]
         )
     assert result.ret == 0
+    tcp.close()
+    uds.close()
 
 
 def test_any_same_proto(testdir, extra):
@@ -107,7 +115,12 @@ def test_any_same_proto(testdir, extra):
     tcp2.bind(('127.0.0.1', 0))
     tcp2.listen(1)
     _, port2 = tcp2.getsockname()
-    t = threading.Thread(target=tcp2.accept)
+
+    def accept():
+        conn, _ = tcp2.accept()
+        conn.close()
+
+    t = threading.Thread(target=accept)
     t.start()
 
     result = testdir.run('holdup', '-t', '0.5', 'tcp://localhost:%s,localhost:%s/' % (port1, port2), *extra)
@@ -115,6 +128,8 @@ def test_any_same_proto(testdir, extra):
         result.stdout.fnmatch_lines(['success !'])
     assert result.ret == 0
     t.join()
+    tcp1.close()
+    tcp2.close()
 
 
 def test_any_failed(testdir):
@@ -130,6 +145,7 @@ def test_any_failed(testdir):
             "Aborting!" % port,
         ]
     )
+    tcp.close()
 
 
 def test_no_abort(testdir, extra):
@@ -227,6 +243,8 @@ def test_pg_unavailable(testdir, proto):
     testdir.tmpdir.join('psycopg2cffi/__init__.py').write('raise ImportError("Disabled for testing")')
     testdir.tmpdir.join('psycopg2').ensure(dir=1)
     testdir.tmpdir.join('psycopg2/__init__.py').write('raise ImportError("Disabled for testing")')
+    testdir.tmpdir.join('psycopg').ensure(dir=1)
+    testdir.tmpdir.join('psycopg/__init__.py').write('raise ImportError("Disabled for testing")')
     result = testdir.run('holdup', '-t', '0.1', proto + ':///')
     result.stderr.fnmatch_lines(
         [
