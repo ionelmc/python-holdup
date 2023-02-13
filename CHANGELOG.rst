@@ -2,7 +2,7 @@
 Changelog
 =========
 
-4.0.0 (2023-02-13)
+4.0.0 (2023-02-14)
 ------------------
 
 * Added support for psycopg 3 (now the ``holdup[pg]`` extra will require that). The old psycopg2 is still supported for now.
