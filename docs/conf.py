@@ -23,8 +23,8 @@ version = release = "3.0.0"
 pygments_style = "trac"
 templates_path = ["."]
 extlinks = {
-    "issue": ("https://github.com/ionelmc/python-holdup/issues/%s", "#"),
-    "pr": ("https://github.com/ionelmc/python-holdup/pull/%s", "PR #"),
+    "issue": ("https://github.com/ionelmc/python-holdup/issues/%s", "issue #%s"),
+    "pr": ("https://github.com/ionelmc/python-holdup/pull/%s", "PR #%s"),
 }
 html_theme = "sphinx_py3doc_enhanced_theme"
 html_theme_path = [sphinx_py3doc_enhanced_theme.get_html_theme_path()]

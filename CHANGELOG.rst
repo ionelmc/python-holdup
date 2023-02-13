@@ -2,6 +2,12 @@
 Changelog
 =========
 
+4.0.0 (2023-02-13)
+------------------
+
+* Added support for psycopg 3 (now the ``holdup[pg]`` extra will require that). The old psycopg2 is still supported for now.
+* Dropped support for Python 3.6 and added in Python 3.11 in the test suite.
+
 3.0.0 (2022-03-20)
 ------------------
 
