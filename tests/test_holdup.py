@@ -17,7 +17,7 @@ def extra(request):
     return request.param
 
 
-def test_normal(testdir, extra):
+def test_normal(testdir, tmp_path_factory, extra):
     tcp = socket.socket()
     tcp.bind(("127.0.0.1", 0))
     tcp.listen(1)
@@ -32,12 +32,15 @@ def test_normal(testdir, extra):
 
     uds = socket.socket(socket.AF_UNIX)
 
-    unix_path = str(testdir.tmpdir.join("holdup-test.sock"))
-    path_path = str(testdir.tmpdir.join("holdup-test"))
+    tmp_path = tmp_path_factory.getbasetemp()
+    unix_path = tmp_path / "sock"
+    path_path = tmp_path / "file"
+
     with open(path_path, "w"):
         pass
-    uds.bind(unix_path)
+    uds.bind(str(unix_path))
     uds.listen(1)
+
     result = testdir.run("holdup", "-t", "0.5", f"tcp://localhost:{port}/", f"path://{path_path}", f"unix://{unix_path}", *extra)
     if extra:
         result.stdout.fnmatch_lines(["success !"])
@@ -45,6 +48,7 @@ def test_normal(testdir, extra):
     t.join()
     uds.close()
     tcp.close()
+    unix_path.unlink()
 
 
 @pytest.mark.parametrize("status", [200, 404])
@@ -76,15 +80,17 @@ def test_http_insecure_with_proto(testdir):
     assert result.ret == 0
 
 
-def test_any(testdir, extra):
+def test_any(testdir, tmp_path_factory, extra):
     tcp = socket.socket()
     tcp.bind(("127.0.0.1", 0))
     _, port = tcp.getsockname()
 
     uds = socket.socket(socket.AF_UNIX)
-    unix_path = str(testdir.tmpdir.join("holdup-test.sock"))
-    path_path = str(testdir.tmpdir.join("holdup-test"))
-    uds.bind(unix_path)
+
+    tmp_path = tmp_path_factory.getbasetemp()
+    unix_path = tmp_path / "sock"
+    path_path = tmp_path / "miss"
+    uds.bind(str(unix_path))
     uds.listen(1)
     result = testdir.run("holdup", "-v", "-t", "0.5", f"tcp://localhost:{port}/,path://{path_path},unix://{unix_path}", *extra)
     if extra:
@@ -103,17 +109,19 @@ def test_any(testdir, extra):
     assert result.ret == 0
     tcp.close()
     uds.close()
+    unix_path.unlink()
 
 
-def test_any2(testdir, extra):
+def test_any2(testdir, tmp_path_factory, extra):
     tcp = socket.socket()
     tcp.bind(("127.0.0.1", 0))
     _, port = tcp.getsockname()
 
     uds = socket.socket(socket.AF_UNIX)
-    unix_path = str(testdir.tmpdir.join("holdup-test.sock"))
-    path_path = str(testdir.tmpdir.join("holdup-test"))
-    uds.bind(unix_path)
+    tmp_path = tmp_path_factory.getbasetemp()
+    unix_path = tmp_path / "sock"
+    path_path = tmp_path / "miss"
+    uds.bind(str(unix_path))
     uds.listen(1)
     result = testdir.run("holdup", "-v", "-t", "0.5", f"path://{path_path},unix://{unix_path},tcp://localhost:{port}/", *extra)
     if extra:
@@ -131,6 +139,7 @@ def test_any2(testdir, extra):
     assert result.ret == 0
     tcp.close()
     uds.close()
+    unix_path.unlink()
 
 
 def test_any_same_proto(testdir, extra):
