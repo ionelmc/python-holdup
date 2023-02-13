@@ -82,21 +82,48 @@ def test_any(testdir, extra):
     _, port = tcp.getsockname()
 
     uds = socket.socket(socket.AF_UNIX)
-    if os.path.exists("/tmp/holdup-test.sock"):
-        os.unlink("/tmp/holdup-test.sock")
-    uds.bind("/tmp/holdup-test.sock")
+    unix_path = str(testdir.tmpdir.join("holdup-test.sock"))
+    path_path = str(testdir.tmpdir.join("holdup-test"))
+    uds.bind(unix_path)
     uds.listen(1)
-    result = testdir.run(
-        "holdup", "-v", "-t", "0.5", "tcp://localhost:%s/,path:///tmp/holdup-test,unix:///tmp/holdup-test.sock" % port, *extra
-    )
+    result = testdir.run("holdup", "-v", "-t", "0.5", f"tcp://localhost:{port}/,path://{path_path},unix://{unix_path}", *extra)
     if extra:
         result.stdout.fnmatch_lines(
             [
                 "holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: "
-                "any(tcp://localhost:*, path:///tmp/holdup-test, unix:///tmp/holdup-test.sock)",
-                "holdup: Passed check: 'path:///tmp/holdup-test' -> PASSED",
-                "holdup: Passed check: any('tcp://localhost:*' -> *, 'path:///tmp/holdup-test' -> PASSED, "
-                "'unix:///tmp/holdup-test.sock' -> PENDING) -> PASSED",
+                f"any(tcp://localhost:*, path://{path_path}, unix://{unix_path})",
+                f"holdup: Passed check: 'unix://{unix_path}' -> PASSED",
+                f"holdup: Passed check: any('tcp://localhost:*' -> [[]Errno 111[]] Connection refused, 'path://{path_path}' ->"
+                f" [[]Errno 2[]] No such file or directory: *, "
+                f"'unix://{unix_path}' -> PASSED) -> PASSED",
+                "holdup: Executing: python -c 'print(\"success !\")'",
+                "success !",
+            ]
+        )
+    assert result.ret == 0
+    tcp.close()
+    uds.close()
+
+
+def test_any2(testdir, extra):
+    tcp = socket.socket()
+    tcp.bind(("127.0.0.1", 0))
+    _, port = tcp.getsockname()
+
+    uds = socket.socket(socket.AF_UNIX)
+    unix_path = str(testdir.tmpdir.join("holdup-test.sock"))
+    path_path = str(testdir.tmpdir.join("holdup-test"))
+    uds.bind(unix_path)
+    uds.listen(1)
+    result = testdir.run("holdup", "-v", "-t", "0.5", f"path://{path_path},unix://{unix_path},tcp://localhost:{port}/", *extra)
+    if extra:
+        result.stdout.fnmatch_lines(
+            [
+                "holdup: Waiting for 0.5s (0.5s per check, 0.2s sleep between loops) for these services: "
+                f"any(path://{path_path}, unix://{unix_path}, tcp://localhost:*)",
+                f"holdup: Passed check: 'unix://{unix_path}' -> PASSED",
+                f"holdup: Passed check: any('path://{path_path}' -> [[]Errno 2[]] No such file or directory: *, "
+                f"'unix://{unix_path}' -> PASSED, 'tcp://localhost:*' -> PENDING) -> PASSED",
                 "holdup: Executing: python -c 'print(\"success !\")'",
                 "success !",
             ]
