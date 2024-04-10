@@ -17,7 +17,7 @@ default_context:
     function_name: compute
     github_actions: 'yes'
     github_actions_osx: 'yes'
-    github_actions_windows: 'yes'
+    github_actions_windows: 'no'
     license: BSD 2-Clause License
     module_name: core
     package_name: holdup
