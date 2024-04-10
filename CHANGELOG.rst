@@ -2,6 +2,12 @@
 Changelog
 =========
 
+5.0.0 (2024-04-11)
+------------------
+
+* Added a static binary in the Github release (built with Pyinstaller on Alpine, as a static bin).
+* Dropped support for Python 3.7 and added in Python 3.12 in the test suite.
+
 4.0.0 (2023-02-14)
 ------------------
 
