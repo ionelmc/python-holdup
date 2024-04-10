@@ -1,20 +1,13 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
-
-import io
 import re
-from glob import glob
-from os.path import basename
-from os.path import dirname
-from os.path import join
-from os.path import splitext
+from pathlib import Path
 
 from setuptools import find_packages
 from setuptools import setup
 
 
 def read(*names, **kwargs):
-    with io.open(join(dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fh:
+    with Path(__file__).parent.joinpath(*names).open(encoding=kwargs.get("encoding", "utf8")) as fh:
         return fh.read()
 
 
@@ -22,10 +15,7 @@ setup(
     name="holdup",
     version="4.0.0",
     license="BSD-2-Clause",
-    description=(
-        "A tool to wait for services and execute command. Useful for Docker containers that depend on slow to start services "
-        "(like almost everything)."
-    ),
+    description="A tool to wait for services and execute command. Useful for Docker containers that depend on slow to start services (like almost everything).",
     long_description="{}\n{}".format(
         re.compile("^.. start-badges.*^.. end-badges", re.M | re.S).sub("", read("README.rst")),
         re.sub(":[a-z]+:`~?(.*?)`", r"``\1``", read("CHANGELOG.rst")),
@@ -35,7 +25,7 @@ setup(
     url="https://github.com/ionelmc/python-holdup",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
+    py_modules=[path.stem for path in Path("src").glob("*.py")],
     include_package_data=True,
     zip_safe=False,
     classifiers=[
@@ -49,11 +39,11 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         # uncomment if you test on these interpreters:
@@ -68,7 +58,7 @@ setup(
         "Issue Tracker": "https://github.com/ionelmc/python-holdup/issues",
     },
     keywords=["wait", "port", "service", "docker", "unix", "domain", "socket", "tcp", "waiter", "holdup", "hold-up"],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
     ],

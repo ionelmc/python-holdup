@@ -1,3 +1,4 @@
+# ruff: noqa: PTH110, PTH120, PTH123
 import os
 import socket
 import threading
@@ -54,7 +55,7 @@ def test_normal(testdir, tmp_path_factory, extra):
 @pytest.mark.parametrize("status", [200, 404])
 @pytest.mark.parametrize("proto", ["http", "https"])
 def test_http(testdir, extra, status, proto):
-    result = testdir.run("holdup", "-T", "5", "-t", "5.1", "%s://httpbin.org/status/%s" % (proto, status), *extra)
+    result = testdir.run("holdup", "-T", "5", "-t", "5.1", f"{proto}://httpbin.org/status/{status}", *extra)
     if extra:
         if status == 200:
             result.stdout.fnmatch_lines(["success !"])
@@ -65,7 +66,7 @@ def test_http(testdir, extra, status, proto):
 @pytest.mark.parametrize("auth", ["basic-auth", "digest-auth/auth"])
 @pytest.mark.parametrize("proto", ["http", "https"])
 def test_http_auth(testdir, extra, auth, proto):
-    result = testdir.run("holdup", "-T", "5", "-t", "5.1", "%s://usr:pwd@httpbin.org/%s/usr/pwd" % (proto, auth), *extra)
+    result = testdir.run("holdup", "-T", "5", "-t", "5.1", f"{proto}://usr:pwd@httpbin.org/{auth}/usr/pwd", *extra)
     if extra:
         result.stdout.fnmatch_lines(["success !"])
 
@@ -159,7 +160,7 @@ def test_any_same_proto(testdir, extra):
     t = threading.Thread(target=accept)
     t.start()
 
-    result = testdir.run("holdup", "-t", "0.5", "tcp://localhost:%s,localhost:%s/" % (port1, port2), *extra)
+    result = testdir.run("holdup", "-t", "0.5", f"tcp://localhost:{port1},localhost:{port2}/", *extra)
     if extra:
         result.stdout.fnmatch_lines(["success !"])
     assert result.ret == 0
@@ -204,8 +205,8 @@ def test_not_readable(testdir, extra):
     result = testdir.run("holdup", "-t", "0.1", "-n", "path://%s" % foobar, *extra)
     result.stderr.fnmatch_lines(
         [
-            "holdup: Failed checks: 'path://%s' -> Failed access('%s', R_OK) test. "
-            "Treating as success because of --no-abort." % (foobar, foobar),
+            f"holdup: Failed checks: 'path://{foobar}' -> Failed access('{foobar}', R_OK) test. "
+            "Treating as success because of --no-abort.",
         ]
     )
 
@@ -293,7 +294,7 @@ def test_pg_unavailable(testdir, proto):
 def testdir2(testdir):
     os.chdir(os.path.dirname(__file__))
     testdir.tmpdir.join("stderr").mksymlinkto(testdir.tmpdir.join("stdout"))
-    yield testdir
+    return testdir
 
 
 @pytest.mark.skipif("not has_docker()")

@@ -7,10 +7,10 @@ Why does this file exist, and why not put this in __main__?
   problems: the code will get executed twice:
 
   - When you run `python -mholdup` python will execute
-    ``__main__.py`` as a script. That means there won't be any
+    ``__main__.py`` as a script. That means there will not be any
     ``holdup.__main__`` in ``sys.modules``.
   - When you import __main__ it will get executed again (as a module) because
-    there's no ``holdup.__main__`` in ``sys.modules``.
+    there"s no ``holdup.__main__`` in ``sys.modules``.
 
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
@@ -46,7 +46,7 @@ except ImportError:
         make_conninfo = lambda value: value  # noqa
 
 import builtins
-from pipes import quote
+from shlex import quote
 from urllib.parse import urlparse
 from urllib.parse import urlunparse
 from urllib.request import HTTPBasicAuthHandler
@@ -56,7 +56,7 @@ from urllib.request import HTTPSHandler
 from urllib.request import build_opener
 
 
-class Check(object):
+class Check:
     error = None
 
     def is_passing(self, options):
@@ -222,7 +222,6 @@ class PathCheck(Check):
         self.path = path
 
     def run(self, _):
-        os.stat(self.path)
         if not os.access(self.path, os.R_OK):
             raise Exception(f"Failed access({self.path!r}, R_OK) test")
 
@@ -240,18 +239,20 @@ class EvalCheck(Check):
         try:
             tree = ast.parse(expr)
         except SyntaxError as exc:
-            raise argparse.ArgumentTypeError(f'Invalid service spec {expr!r}. Parse error:\n  {exc.text} {" " * exc.offset}^\n{exc}')
+            raise argparse.ArgumentTypeError(
+                f'Invalid service spec {expr!r}. Parse error:\n  {exc.text} {" " * exc.offset}^\n{exc}'
+            ) from None
         for node in ast.walk(tree):
             if isinstance(node, ast.Name):
                 if not hasattr(builtins, node.id):
                     try:
                         __import__(node.id)
                     except ImportError as exc:
-                        raise argparse.ArgumentTypeError(f"Invalid service spec {expr!r}. Import error: {exc}")
+                        raise argparse.ArgumentTypeError(f"Invalid service spec {expr!r}. Import error: {exc}") from None
                     self.ns[node.id] = sys.modules[node.id]
 
     def run(self, _):
-        result = eval(self.expr, dict(self.ns), dict(self.ns))
+        result = eval(self.expr, dict(self.ns), dict(self.ns))  # noqa: S307
         if not result:
             raise Exception(f"Failed to evaluate {self.expr!r}. Result {result!r} is falsey")
 
@@ -322,14 +323,14 @@ def parse_value(value, proto):
         try:
             connection_uri = make_conninfo(uri)
         except Exception as exc:
-            raise argparse.ArgumentTypeError(f"Failed to parse {display_value!r}: {exc}. Must be a valid connection URI.")
+            raise argparse.ArgumentTypeError(f"Failed to parse {display_value!r}: {exc}. Must be a valid connection URI.") from None
         return PgCheck(connection_uri)
     elif proto == "unix":
         return UnixCheck(value)
     elif proto == "path":
         return PathCheck(value)
     elif proto in ("http", "https", "https+insecure"):
-        return HttpCheck("%s://%s" % (proto, value))
+        return HttpCheck(f"{proto}://{value}")
     elif proto == "eval":
         return EvalCheck(value)
     else:
@@ -437,4 +438,4 @@ def main():
     if command:
         if options.verbose:
             print(f'holdup: Executing: {" ".join(map(quote, command))}')
-        os.execvp(command[0], command)
+        os.execvp(command[0], command)  # noqa:S606

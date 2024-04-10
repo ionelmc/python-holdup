@@ -10,26 +10,20 @@ Overview
     * - docs
       - |docs|
     * - tests
-      - | |github-actions| |requires|
-        | |coveralls|
+      - |github-actions| |coveralls|
     * - package
-      - | |version| |wheel| |supported-versions| |supported-implementations|
-        | |commits-since|
+      - |version| |wheel| |supported-versions| |supported-implementations| |commits-since|
 .. |docs| image:: https://readthedocs.org/projects/python-holdup/badge/?style=flat
-    :target: https://python-holdup.readthedocs.io/
+    :target: https://readthedocs.org/projects/python-holdup/
     :alt: Documentation Status
 
 .. |github-actions| image:: https://github.com/ionelmc/python-holdup/actions/workflows/github-actions.yml/badge.svg
     :alt: GitHub Actions Build Status
     :target: https://github.com/ionelmc/python-holdup/actions
 
-.. |requires| image:: https://requires.io/github/ionelmc/python-holdup/requirements.svg?branch=master
-    :alt: Requirements Status
-    :target: https://requires.io/github/ionelmc/python-holdup/requirements/?branch=master
-
-.. |coveralls| image:: https://coveralls.io/repos/ionelmc/python-holdup/badge.svg?branch=master&service=github
+.. |coveralls| image:: https://coveralls.io/repos/github/ionelmc/python-holdup/badge.svg?branch=master
     :alt: Coverage Status
-    :target: https://coveralls.io/r/ionelmc/python-holdup
+    :target: https://coveralls.io/github/ionelmc/python-holdup?branch=master
 
 .. |version| image:: https://img.shields.io/pypi/v/holdup.svg
     :alt: PyPI Package latest release
@@ -60,8 +54,8 @@ A tool to wait for services and execute command. Useful for Docker containers th
 
 * Free software: BSD 2-Clause License
 
-Installlation
-=============
+Installation
+============
 
 Currently holdup is only published to PyPI and `hub.docker.com <https://hub.docker.com/r/ionelmc/holdup>`_.
 
