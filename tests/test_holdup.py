@@ -63,6 +63,16 @@ def test_http(testdir, extra, status, proto):
             result.stderr.fnmatch_lines(["*HTTP Error 404*"])
 
 
+@pytest.mark.parametrize("status", [200, 404])
+def test_http_port(testdir, extra, status):
+    result = testdir.run("holdup", "-T", "5", "-t", "5.1", f"http://httpbin.org:80/status/{status}", *extra)
+    if extra:
+        if status == 200:
+            result.stdout.fnmatch_lines(["success !"])
+        else:
+            result.stderr.fnmatch_lines(["*HTTP Error 404*"])
+
+
 @pytest.mark.parametrize("auth", ["basic-auth", "digest-auth/auth"])
 @pytest.mark.parametrize("proto", ["http", "https"])
 def test_http_auth(testdir, extra, auth, proto):

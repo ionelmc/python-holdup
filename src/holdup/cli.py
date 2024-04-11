@@ -155,7 +155,7 @@ class HttpCheck(Check):
             url = url._replace(scheme="https")
 
         if url.port:
-            self.netloc = f"{self.hostname}:{self.port}"
+            self.netloc = f"{url.hostname}:{url.port}"
         else:
             self.netloc = url.hostname
 
