@@ -1,8 +1,8 @@
 # ruff: noqa: PTH110, PTH120, PTH123
 import os
+import shutil
 import socket
 import threading
-from distutils import spawn
 
 import pytest
 
@@ -10,7 +10,7 @@ pytest_plugins = ("pytester",)
 
 
 def has_docker():
-    return spawn.find_executable("docker") and spawn.find_executable("docker-compose")
+    return shutil.which("docker")
 
 
 @pytest.fixture(params=[[], ["--", "python", "-c", 'print("success !")']])
