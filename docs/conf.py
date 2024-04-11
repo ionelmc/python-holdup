@@ -20,8 +20,8 @@ version = release = "5.0.0"
 pygments_style = "trac"
 templates_path = ["."]
 extlinks = {
-    "issue": ("https://github.com/ionelmc/python-holdup/issues/%s", "#"),
-    "pr": ("https://github.com/ionelmc/python-holdup/pull/%s", "PR #"),
+    "issue": ("https://github.com/ionelmc/python-holdup/issues/%s", "#%s"),
+    "pr": ("https://github.com/ionelmc/python-holdup/pull/%s", "PR #%s"),
 }
 
 html_theme_options = {

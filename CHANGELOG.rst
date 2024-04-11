@@ -2,11 +2,12 @@
 Changelog
 =========
 
-5.0.1 (2024-04-12)
+5.1.0 (2024-04-12)
 ------------------
 
 * Fixed buggy handling when http checks are specified with a port.
 * Changed User-Agent header and stripped port from Host header for http checks.
+* Refactored a bunch of code into a separate ``holdup.checks`` module.
 
 5.0.0 (2024-04-11)
 ------------------
