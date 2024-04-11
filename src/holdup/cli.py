@@ -53,7 +53,10 @@ from urllib.request import HTTPBasicAuthHandler
 from urllib.request import HTTPDigestAuthHandler
 from urllib.request import HTTPPasswordMgrWithDefaultRealm
 from urllib.request import HTTPSHandler
+from urllib.request import Request
 from urllib.request import build_opener
+
+import holdup
 
 
 class Check:
@@ -158,6 +161,7 @@ class HttpCheck(Check):
             self.netloc = f"{url.hostname}:{url.port}"
         else:
             self.netloc = url.hostname
+        self.host = url.hostname
 
         cleaned_url = urlunparse(url._replace(netloc=self.netloc))
 
@@ -180,8 +184,9 @@ class HttpCheck(Check):
         handlers.append(HTTPSHandler(context=ssl_ctx))
 
         opener = build_opener(*handlers)
-
-        with closing(opener.open(self.url, timeout=options.check_timeout)) as req:
+        opener.addheaders = [("User-Agent", f"python-holdup/{holdup.__version__}")]
+        request = Request(self.url, headers={"Host": self.host})  # noqa: S310
+        with closing(opener.open(request, timeout=options.check_timeout)) as req:
             status = req.getcode()
             if status != 200:
                 raise Exception(f"Expected status code 200, got {status!r}")
@@ -222,6 +227,8 @@ class PathCheck(Check):
         self.path = path
 
     def run(self, _):
+        # necessary to check if it exists.
+        os.stat(self.path)  # noqa: PTH116
         if not os.access(self.path, os.R_OK):
             raise Exception(f"Failed access({self.path!r}, R_OK) test")
 
@@ -379,8 +386,6 @@ parser.add_argument("--insecure", action="store_true", help="Disable SSL Certifi
 
 
 def add_version_argument(parser):
-    import holdup
-
     parser.add_argument(
         "--version",
         action="version",
