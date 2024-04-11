@@ -99,7 +99,6 @@ positional arguments:
     An optional command to exec.
 
 optional arguments:
-
   -h, --help            show this help message and exit
   -t SECONDS, --timeout SECONDS
                         Time to wait for services to be ready. Default: 60.0

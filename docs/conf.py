@@ -23,6 +23,7 @@ extlinks = {
     "issue": ("https://github.com/ionelmc/python-holdup/issues/%s", "#%s"),
     "pr": ("https://github.com/ionelmc/python-holdup/pull/%s", "PR #%s"),
 }
+html_theme = "furo"
 
 html_theme_options = {
     "githuburl": "https://github.com/ionelmc/python-holdup/",
@@ -31,9 +32,6 @@ html_theme_options = {
 html_use_smartypants = True
 html_last_updated_fmt = "%b %d, %Y"
 html_split_index = False
-html_sidebars = {
-    "**": ["searchbox.html", "globaltoc.html", "sourcelink.html"],
-}
 html_short_title = f"{project}-{version}"
 
 napoleon_use_ivar = True
