@@ -253,7 +253,7 @@ def test_eval_falsey(testdir):
 
 
 def test_eval_distutils(testdir, extra):
-    result = testdir.run("holdup", 'eval://__import__("distutils.spawn").spawn.find_executable("find")', *extra)
+    result = testdir.run("holdup", 'eval://__import__("shutil").which("find")', *extra)
     if extra:
         result.stdout.fnmatch_lines(["success !"])
     assert result.ret == 0
