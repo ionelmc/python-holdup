@@ -91,7 +91,7 @@ def test_http_insecure_with_proto(testdir):
     assert result.ret == 0
 
 
-def test_any(testdir, tmp_path_factory, extra):
+def test_any1(testdir, tmp_path_factory, extra):
     tcp = socket.socket()
     tcp.bind(("127.0.0.1", 0))
     _, port = tcp.getsockname()
@@ -99,7 +99,7 @@ def test_any(testdir, tmp_path_factory, extra):
     uds = socket.socket(socket.AF_UNIX)
 
     tmp_path = tmp_path_factory.getbasetemp()
-    unix_path = tmp_path / "sock"
+    unix_path = tmp_path / "s"
     path_path = tmp_path / "miss"
     uds.bind(str(unix_path))
     uds.listen(1)
@@ -129,7 +129,7 @@ def test_any2(testdir, tmp_path, extra):
     _, port = tcp.getsockname()
 
     uds = socket.socket(socket.AF_UNIX)
-    unix_path = tmp_path / "sock"
+    unix_path = tmp_path / "s"
     path_path = tmp_path / "miss"
     uds.bind(str(unix_path))
     uds.listen(1)
