@@ -183,12 +183,12 @@ def test_any_failed(testdir):
     tcp.bind(("127.0.0.1", 0))
     _, port = tcp.getsockname()
 
-    result = testdir.run("holdup", "-t", "0.5", "tcp://localhost:%s/,path:///doesnt/exist,unix:///doesnt/exist" % port)
+    result = testdir.run("holdup", "-t", "0.5", f"tcp://localhost:{port}/,path:///doesnt/exist,unix:///doesnt/exist")
     result.stderr.fnmatch_lines(
         [
-            "holdup: Failed checks: any('tcp://localhost:%s' -> *, 'path:///doesnt/exist' -> *, "
+            f"holdup: Failed checks: any('tcp://localhost:{port}' -> *, 'path:///doesnt/exist' -> *, "
             "'unix:///doesnt/exist' -> *) -> ALL FAILED. "
-            "Aborting!" % port,
+            "Aborting!",
         ]
     )
     tcp.close()
@@ -211,7 +211,7 @@ def test_no_abort(testdir, extra):
 def test_not_readable(testdir, extra):
     foobar = testdir.maketxtfile(foobar="")
     foobar.chmod(0)
-    result = testdir.run("holdup", "-t", "0.1", "-n", "path://%s" % foobar, *extra)
+    result = testdir.run("holdup", "-t", "0.1", "-n", f"path://{foobar}", *extra)
     result.stderr.fnmatch_lines(
         [
             f"holdup: Failed checks: 'path://{foobar}' -> Failed access('{foobar}', R_OK) test. "
@@ -294,7 +294,7 @@ def test_pg_unavailable(testdir, proto):
     result = testdir.run("holdup", "-t", "0.1", proto + ":///")
     result.stderr.fnmatch_lines(
         [
-            "holdup: error: argument service: Protocol %s unusable. Install holdup[[]pg[]]." % proto,
+            f"holdup: error: argument service: Protocol {proto} unusable. Install holdup[[]pg[]].",
         ]
     )
 
