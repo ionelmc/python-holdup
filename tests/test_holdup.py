@@ -1,5 +1,6 @@
 # ruff: noqa: PTH110, PTH120, PTH123
 import os
+import platform
 import shutil
 import socket
 import threading
@@ -273,6 +274,7 @@ def test_eval_comma_anycheck(testdir, extra):
     assert result.ret == 0
 
 
+@pytest.mark.skipif(platform.system() != "Linux", reason="too complicated to install psycopg on non-linux")
 @pytest.mark.parametrize("proto", ["postgresql", "postgres", "pg"])
 def test_pg_timeout(testdir, proto):
     result = testdir.run("holdup", "-t", "0.1", proto + "://0.0.0.0/foo")

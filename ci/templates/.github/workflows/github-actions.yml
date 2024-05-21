@@ -38,7 +38,7 @@ jobs:
             python: '{{ python }}'
             toxpython: '{{ toxpython }}'
             python_arch: '{{ python_arch }}'
-            tox_env: '{{ env }}'
+            tox_env: '{{ env if os == 'ubuntu' else prefix }}'
             os: '{{ os }}-latest'
 {% endfor %}
 {% endfor %}
