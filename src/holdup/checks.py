@@ -158,7 +158,7 @@ class HttpCheck(Check):
 
     def display_definition(self, *, verbose_passwords):
         url = self.parsed_url
-        if not verbose_passwords:
+        if url.username and not verbose_passwords:
             if not url.password:
                 mask = "******"
             else:

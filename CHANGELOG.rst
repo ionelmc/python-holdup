@@ -2,6 +2,11 @@
 Changelog
 =========
 
+5.1.1 (2024-05-21)
+------------------
+
+* Do not display an authentication mask for http protocols if there are no actual credentials specified.
+
 5.1.0 (2024-04-12)
 ------------------
 
